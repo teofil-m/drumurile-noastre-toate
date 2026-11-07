@@ -67,7 +67,8 @@ Data flow per frame: `ui/input` → controls → `core/steering` → `sim` steps
 - Top speed ≈ 110 km/h
 
 ### 4.2 Damage
-- `dmg = round(tierDamage × clamp(speedKmh / 50, 0.3, 2.0))`
+- `dmg = round(tierDamage × clamp(speedKmh / 300, 0.3, 2.0))`
+- Tuned 2026-11-08, greedy bot 190–240 s (was `/ 50`; at 110 km/h the factor is ≈ 0.37).
 - A hazard instance damages at most once per contact (dedupe by `instanceId`).
 - If `runTime < MIN_WRECK_TIME_S`: `health = max(health − dmg, 1)`; else `health = max(health − dmg, 0)`.
 - Health 0 → run state `wrecked`, score = run time in ms.
@@ -94,8 +95,9 @@ Each threshold emits a `PartDetached{part}` once; render turns the part into a l
 
 ### 4.5 Difficulty ramp (AC 4)
 - `u = min(t / 300, 1)`
-- Hazards per 100 m: `0.6 + 6.4 × u^1.5`
+- Hazards per 100 m: `1 + 3 × u^1.5`
 - Traffic cars per 100 m: `0.1 + 1.2 × u`
+- Tuned 2026-11-08, greedy bot 190–240 s (was `0.6 + 6.4 × u^1.5`).
 - `roadgen`: seeded 50 m chunks; hazards ≥ 6 m apart; curbs mostly on bends.
 
 ### 4.6 Balance guard

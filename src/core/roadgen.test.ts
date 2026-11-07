@@ -81,9 +81,10 @@ describe('generateChunk', () => {
 
   it('hazard counts match the density at the start and at full ramp', () => {
     const hi = mean(chunks(21, 1, 1000, 300).map((c) => c.hazards.length));
-    expect(Math.abs(hi - 3.5) / 3.5).toBeLessThan(0.1);
+    // densities retuned in Task 11: 4 per 100 m at full ramp, 1 per 100 m at start.
+    expect(Math.abs(hi - 2) / 2).toBeLessThan(0.1);
     const lo = mean(chunks(21, 1, 1000, 0).map((c) => c.hazards.length));
-    expect(Math.abs(lo - 0.3) / 0.3).toBeLessThan(0.15);
+    expect(Math.abs(lo - 0.5) / 0.5).toBeLessThan(0.15);
   });
 
   it('traffic count matches the density', () => {

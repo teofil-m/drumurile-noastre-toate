@@ -1,0 +1,50 @@
+import { describe, expect, it } from 'vitest';
+import { BOT, simulateGreedyBot } from './bot';
+
+// Known equivalent mutants: the boundary operators (<= vs <, > vs >=) on float-exact equality (timeS vs maxTimeS, h.s vs s/prevS, |lateral - h.lateral| vs tolerance) are never hit exactly.
+describe('greedy bot balance guard', () => {
+  it('has the fixed bot constants', () => {
+    expect(BOT).toEqual({ lateralSpeedMps: 2.5, hitToleranceM: 0.9, dtS: 1 / 60 });
+  });
+  it.each([1, 2, 3, 4, 5])('seed %i: perfect play wrecks naturally between 190 and 240 s', (seed) => {
+    const r = simulateGreedyBot(seed);
+    expect(r.wreckTimeS).not.toBeNull();
+    expect(r.wreckTimeS!).toBeGreaterThanOrEqual(190);
+    expect(r.wreckTimeS!).toBeLessThanOrEqual(240);
+    expect(r.clampAbsorbed).toBe(false);
+    expect(r.hits).toBeGreaterThan(0);
+    expect(r.potholes).toBeGreaterThan(0);
+    expect(r.potholes).toBeLessThanOrEqual(r.hits);
+  });
+  it('never wrecks before MIN_WRECK_TIME_S for 20 seeds', () => {
+    for (let seed = 1; seed <= 20; seed++) {
+      const w = simulateGreedyBot(seed).wreckTimeS;
+      if (w !== null) expect(w).toBeGreaterThanOrEqual(180);
+    }
+  });
+  it('is deterministic', () => {
+    expect(simulateGreedyBot(7)).toEqual(simulateGreedyBot(7));
+  });
+  it('returns null wreck time when maxTimeS is reached first', () => {
+    const r = simulateGreedyBot(1, 5);
+    expect(r.wreckTimeS).toBeNull();
+    expect(r.clampAbsorbed).toBe(false);
+  });
+  // Characterisation of the tuned config (Task 11): hit counts pin the hit/target logic. Re-pin if the ramp is retuned.
+  it.each([
+    [1, 204.37, 63, 96],
+    [2, 204.67, 64, 90],
+    [3, 205.4, 67, 101],
+    [4, 204.02, 67, 91],
+    [5, 217.13, 81, 110],
+  ])('seed %i: pinned outcome', (seed, t, potholes, hits) => {
+    const r = simulateGreedyBot(seed);
+    expect(r.wreckTimeS!).toBeCloseTo(t, 1);
+    expect(r.potholes).toBe(potholes);
+    expect(r.hits).toBe(hits);
+  });
+  it('counts hits before the time limit', () => {
+    expect(simulateGreedyBot(3, 60)).toEqual({ wreckTimeS: null, clampAbsorbed: false, potholes: 12, hits: 20 });
+    expect(simulateGreedyBot(9, 100)).toEqual({ wreckTimeS: null, clampAbsorbed: false, potholes: 31, hits: 39 });
+  });
+});
