@@ -25,7 +25,6 @@ describe('createSteering', () => {
   });
 });
 
-// Equivalent mutant: 'dtS < 0' -> 'dtS <= 0' is unobservable because a dt of 0 changes no state either way.
 // Equivalent survivor: steering.ts:16 `dtS < 0` -> `<= 0`; dtS = 0 takes the early return as an unchanged copy, which equals the computed step with dt 0.
 describe('stepSteering', () => {
   it('lags behind the input', () => {

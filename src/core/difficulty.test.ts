@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-// Known equivalent mutant: `tS < 0` -> `tS <= 0` (t=0 yields 0 either way).
 import { hazardDensityPer100m, rampProgress, trafficDensityPer100m } from './difficulty';
 
 // RAMP.hazardBase/hazardExtra tuned in Task 11 (0.6/6.4 -> 1/1.4, with HAZARD_WEIGHTS shifted to small tiers) so the greedy bot wrecks naturally at 190-240 s.

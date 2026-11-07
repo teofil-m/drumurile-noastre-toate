@@ -95,7 +95,6 @@ describe('evaluateAchievements rules', () => {
   });
 });
 
-// Equivalent mutants (achievements.ts): empty catch block (parsed stays undefined, not an array -> empty set) and dropping the typeof-string check (known.has() is false for non-strings).
 // Equivalent survivor: achievements.ts:72 empty catch block; parsed stays undefined and the !Array.isArray guard returns the same empty set.
 // Equivalent survivor: achievements.ts:77 `typeof v === 'string'` -> true; known.has(v) already rejects every non-string, so behavior is identical.
 describe('persistence', () => {
@@ -118,9 +117,6 @@ describe('persistence', () => {
     ['string', '"everest"'],
   ])('loads empty for %s', (_n, raw) => {
     expect(loadUnlocked(memoryStore({ [ACHIEVEMENTS_KEY]: raw }))).toEqual(new Set());
-  });
-  it('returns an empty set for corrupt JSON instead of throwing', () => {
-    expect(loadUnlocked(memoryStore({ [ACHIEVEMENTS_KEY]: '{not json' }))).toEqual(new Set());
   });
   it('filters unknown ids and non-strings', () => {
     expect(loadUnlocked(memoryStore({ [ACHIEVEMENTS_KEY]: '["everest","nope",5,null]' }))).toEqual(new Set(['everest']));

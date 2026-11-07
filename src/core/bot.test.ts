@@ -1,11 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { BOT, simulateGreedyBot } from './bot';
 
-// Known equivalent mutants: the boundary operators (<= vs <, > vs >=) on float-exact equality (timeS vs maxTimeS, h.s vs s/prevS, |lateral - h.lateral| vs tolerance) are never hit exactly.
-// Equivalent survivors in bot.ts (boundary/ordering mutants not observable through the aggregate wreck time / hit counts):
-// - bot.ts:29 `timeS < maxTimeS` -> `<=`: one extra 1/dt tick at the limit; wreck-time bounds and null-vs-number results are unaffected.
-// - bot.ts:37 (`>` -> `>=`, removed `.sort`, `a - b` -> `a + b`): hazards are generated in ascending s per chunk with spacing >= minHazardSpacingM, so the nearest target is unchanged and a hazard exactly at s has probability ~0.
-// - bot.ts:46 (`h.s > prevS`, `h.s <= s`, `<= hitToleranceM` boundary flips): hazard positions and lateral offsets are continuous floats, so exact equality at a tick/tolerance boundary has probability ~0.
 describe('greedy bot balance guard', () => {
   it('has the fixed bot constants', () => {
     expect(BOT).toEqual({ lateralSpeedMps: 2.5, hitToleranceM: 0.9, dtS: 1 / 60 });
@@ -50,5 +45,17 @@ describe('greedy bot balance guard', () => {
   it('counts hits before the time limit', () => {
     expect(simulateGreedyBot(3, 60)).toEqual({ wreckTimeS: null, clampAbsorbed: false, potholes: 7, hits: 17 });
     expect(simulateGreedyBot(9, 100)).toEqual({ wreckTimeS: null, clampAbsorbed: false, potholes: 21, hits: 34 });
+  });
+  it('stops at the first tick whose time reaches maxTimeS (bot.ts:29 `<` not `<=`)', () => {
+    const T = simulateGreedyBot(1).wreckTimeS!;
+    let t = 0;
+    let prev = 0;
+    while (t !== T) {
+      prev = t;
+      t += BOT.dtS;
+      expect(t).toBeLessThanOrEqual(T + BOT.dtS);
+    }
+    expect(simulateGreedyBot(1, prev).wreckTimeS).toBeNull();
+    expect(simulateGreedyBot(1, T).wreckTimeS).toBe(T);
   });
 });

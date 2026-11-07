@@ -1,6 +1,4 @@
 import { describe, expect, it } from 'vitest';
-// Known equivalent/accepted Stryker survivors in roadgen.ts: boundary operators on continuous rng values (< vs <=, > vs >=),
-// curb-side/lane coin flips (symmetric), and the placement retry cap (20 tries is never exhausted at the densities used).
 import { HAZARD_WEIGHTS, ROAD, TRAFFIC } from './config';
 import { HAZARD_IDS, getHazard } from './hazards';
 import { generateChunk, type Chunk } from './roadgen';
@@ -12,11 +10,8 @@ const chunks = (seed: number, from: number, toIncl: number, tS: number): Chunk[]
 const mean = (xs: number[]): number => xs.reduce((a, b) => a + b, 0) / xs.length;
 const isCurb = (id: Chunk['hazards'][number]['hazardId']): boolean => getHazard(id).kind === 'curb';
 
-// Equivalent survivors in roadgen.ts (continuous-float boundaries or unreachable defensive code):
-// - roadgen.ts:16, 45, 54 (`rng.next() < x` -> `<=`): next() equalling the threshold exactly (fraction / 0.5) has probability ~0.
-// - roadgen.ts:27 (`abs(curvature) > bendThreshold` -> `>=`): curvature is a continuous float; exact equality with the threshold is not reachable.
-// - roadgen.ts:37 (MAX_PLACEMENT_TRIES loop bound `<`, `<=`, `true`, `t--`): the 20-try drop branch needs 20 consecutive spacing collisions, unreachable at configured densities; the loop exits on first success.
-// - roadgen.ts:39 (`>=` -> `>` on minHazardSpacingM): exact spacing equality between two random floats has probability ~0.
+// Left deliberately (killable only by stubbing the Rng to an exact boundary value; exact-float boundary, no behavioral significance):
+// roadgen.ts:16 (`rng.next() < frac` -> `<=`), :27 (`abs(curvature) > bendThreshold` -> `>=`), :45 (curb side `< 0.5` -> `<=`), :54 (lane `< 0.5` -> `<=`).
 describe('generateChunk', () => {
   it('is deterministic for equal (seed, index, tS)', () => {
     expect(generateChunk(42, 7, 120)).toEqual(generateChunk(42, 7, 120));
@@ -97,6 +92,16 @@ describe('generateChunk', () => {
     expect(Math.abs(m - 0.65) / 0.65).toBeLessThan(0.1);
   });
 
+  it('pins traffic lane and speed range for known (seed, index): oncoming lane -1 and same-direction lane 1 (roadgen.ts:54)', () => {
+    const a = generateChunk(1, 3, 200).traffic;
+    expect(a).toHaveLength(1);
+    expect(a[0]!.lane).toBe(-1);
+    expect(a[0]!.speedKmh).toBeCloseTo(54.59029605612159, 9);
+    const b = generateChunk(1, 6, 200).traffic;
+    expect(b).toHaveLength(1);
+    expect(b[0]!.lane).toBe(1);
+    expect(b[0]!.speedKmh).toBeCloseTo(44.65086351847276, 9);
+  });
   it('traffic stays in margins, uses both lanes, speeds within lane ranges', () => {
     const ts = chunks(4, 1, 1000, 300).flatMap((c) => c.traffic.map((t) => ({ c, t })));
     expect(ts.some(({ t }) => t.lane === 1)).toBe(true);
