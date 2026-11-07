@@ -2,6 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { BOT, simulateGreedyBot } from './bot';
 
 // Known equivalent mutants: the boundary operators (<= vs <, > vs >=) on float-exact equality (timeS vs maxTimeS, h.s vs s/prevS, |lateral - h.lateral| vs tolerance) are never hit exactly.
+// Equivalent survivors in bot.ts (boundary/ordering mutants not observable through the aggregate wreck time / hit counts):
+// - bot.ts:29 `timeS < maxTimeS` -> `<=`: one extra 1/dt tick at the limit; wreck-time bounds and null-vs-number results are unaffected.
+// - bot.ts:37 (`>` -> `>=`, removed `.sort`, `a - b` -> `a + b`): hazards are generated in ascending s per chunk with spacing >= minHazardSpacingM, so the nearest target is unchanged and a hazard exactly at s has probability ~0.
+// - bot.ts:46 (`h.s > prevS`, `h.s <= s`, `<= hitToleranceM` boundary flips): hazard positions and lateral offsets are continuous floats, so exact equality at a tick/tolerance boundary has probability ~0.
 describe('greedy bot balance guard', () => {
   it('has the fixed bot constants', () => {
     expect(BOT).toEqual({ lateralSpeedMps: 2.5, hitToleranceM: 0.9, dtS: 1 / 60 });

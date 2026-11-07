@@ -12,6 +12,11 @@ const chunks = (seed: number, from: number, toIncl: number, tS: number): Chunk[]
 const mean = (xs: number[]): number => xs.reduce((a, b) => a + b, 0) / xs.length;
 const isCurb = (id: Chunk['hazards'][number]['hazardId']): boolean => getHazard(id).kind === 'curb';
 
+// Equivalent survivors in roadgen.ts (continuous-float boundaries or unreachable defensive code):
+// - roadgen.ts:16, 45, 54 (`rng.next() < x` -> `<=`): next() equalling the threshold exactly (fraction / 0.5) has probability ~0.
+// - roadgen.ts:27 (`abs(curvature) > bendThreshold` -> `>=`): curvature is a continuous float; exact equality with the threshold is not reachable.
+// - roadgen.ts:37 (MAX_PLACEMENT_TRIES loop bound `<`, `<=`, `true`, `t--`): the 20-try drop branch needs 20 consecutive spacing collisions, unreachable at configured densities; the loop exits on first success.
+// - roadgen.ts:39 (`>=` -> `>` on minHazardSpacingM): exact spacing equality between two random floats has probability ~0.
 describe('generateChunk', () => {
   it('is deterministic for equal (seed, index, tS)', () => {
     expect(generateChunk(42, 7, 120)).toEqual(generateChunk(42, 7, 120));

@@ -10,6 +10,7 @@ describe('rng', () => {
   it('next stays in [0,1)', () => { const r = createRng(7); for (let i = 0; i < 10_000; i++) { const v = r.next(); expect(v).toBeGreaterThanOrEqual(0); expect(v).toBeLessThan(1); } });
   it('range and int respect bounds', () => { const r = createRng(3); for (let i = 0; i < 5_000; i++) { const x = r.range(-2, 5); expect(x).toBeGreaterThanOrEqual(-2); expect(x).toBeLessThan(5); const n = r.int(1, 4); expect([1, 2, 3]).toContain(n); } });
   it('int reaches both ends', () => { const r = createRng(9); const seen = new Set<number>(); for (let i = 0; i < 1_000; i++) seen.add(r.int(0, 3)); expect([...seen].sort()).toEqual([0, 1, 2]); });
+  // Equivalent survivor: rng.ts:28 `r < it.weight` -> `<=`; r is a continuous float in [0,total) so r === it.weight (and differing outcome) has probability ~0 and is not reachable with mulberry32 outputs.
   it('pick follows weights', () => {
     const r = createRng(5); const c = { a: 0, b: 0, z: 0 };
     for (let i = 0; i < 20_000; i++) c[r.pick([{ weight: 3, value: 'a' as const }, { weight: 1, value: 'b' as const }, { weight: 0, value: 'z' as const }])]++;

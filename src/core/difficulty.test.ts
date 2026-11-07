@@ -4,6 +4,7 @@ import { hazardDensityPer100m, rampProgress, trafficDensityPer100m } from './dif
 
 // RAMP.hazardBase/hazardExtra tuned in Task 11 (0.6/6.4 -> 1/1.4, with HAZARD_WEIGHTS shifted to small tiers) so the greedy bot wrecks naturally at 190-240 s.
 // Floor: the road stays interesting (>= 1 hazard per 100 m) once the early game is over.
+// Equivalent survivor: difficulty.ts:4 `tS < 0` -> `<= 0`; at tS = 0 the fallthrough yields min(0 / fullAtS, 1) = 0, same as the early return.
 describe('difficulty ramp', () => {
   it.each([[0, 0], [150, 0.5], [300, 1], [600, 1], [-10, 0], [NaN, 0], [Infinity, 0], [-Infinity, 0], [75, 0.25]])('rampProgress at %p s', (t, p) => {
     expect(rampProgress(t)).toBeCloseTo(p, 9);
