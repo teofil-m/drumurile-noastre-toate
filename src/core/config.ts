@@ -21,11 +21,11 @@ export const HAZARD_WEIGHTS: Record<HazardId, number> = {
 export const TRAFFIC = { sameDirKmh: [40, 70], oncomingKmh: [40, 80] } as const;
 export const STEERING = { lagPerS: 6, wobbleAmplitude: 0.06, wobbleHz: 1.3, wobbleFullAtKmh: 60 };
 export const FARA_MAINI = { streak: 5, steerDeadzone: 0.1 };
-export const PART_THRESHOLDS: ReadonlyArray<{ part: Part; takenAt: number }> = [
-  { part: 'bumper', takenAt: 200 },
-  { part: 'hood', takenAt: 400 },
-  { part: 'doorLeft', takenAt: 550 },
-  { part: 'doorRight', takenAt: 700 },
-  { part: 'exhaust', takenAt: 850 },
-  { part: 'transmission', takenAt: 950 },
+export const PART_THRESHOLDS: ReadonlyArray<{ part: Part; damageTaken: number }> = [
+  { part: 'bumper', damageTaken: 200 },
+  { part: 'hood', damageTaken: 400 },
+  { part: 'doorLeft', damageTaken: 550 },
+  { part: 'doorRight', damageTaken: 700 },
+  { part: 'exhaust', damageTaken: 850 },
+  { part: 'transmission', damageTaken: 950 },
 ];

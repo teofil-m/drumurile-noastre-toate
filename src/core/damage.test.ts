@@ -32,8 +32,8 @@ describe('damage', () => {
     expect(SPEED_FACTOR).toEqual({ divisorKmh: 50, min: 0.3, max: 2.0 });
     expect(TIER_DAMAGE).toEqual({ small: 10, medium: 25, large: 50, epic: 120 });
     expect(PART_THRESHOLDS).toEqual([
-      { part: 'bumper', takenAt: 200 }, { part: 'hood', takenAt: 400 }, { part: 'doorLeft', takenAt: 550 },
-      { part: 'doorRight', takenAt: 700 }, { part: 'exhaust', takenAt: 850 }, { part: 'transmission', takenAt: 950 },
+      { part: 'bumper', damageTaken: 200 }, { part: 'hood', damageTaken: 400 }, { part: 'doorLeft', damageTaken: 550 },
+      { part: 'doorRight', damageTaken: 700 }, { part: 'exhaust', damageTaken: 850 }, { part: 'transmission', damageTaken: 950 },
     ]);
   });
 });

@@ -28,5 +28,5 @@ export function applyDamage(health: number, dmg: number, runTimeS: number): Dama
 }
 
 export function newlyDetached(prevTaken: number, nextTaken: number): Part[] {
-  return PART_THRESHOLDS.filter((t) => prevTaken < t.takenAt && t.takenAt <= nextTaken).map((t) => t.part);
+  return PART_THRESHOLDS.filter((t) => prevTaken < t.damageTaken && t.damageTaken <= nextTaken).map((t) => t.part);
 }
