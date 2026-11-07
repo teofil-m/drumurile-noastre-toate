@@ -58,7 +58,7 @@ describe('generateChunk', () => {
       for (const t of c.traffic) ids.add(t.instanceId);
       c.traffic.forEach((t, i) => expect(t.instanceId).toBe(`${c.index}-t${i}`));
     }
-    expect(total).toBeGreaterThan(500);
+    expect(total).toBeGreaterThan(300);
     const expected = chunks(11, 1, 300, 300).reduce((n, c) => n + c.hazards.length + c.traffic.length, 0);
     expect(ids.size).toBe(expected);
   });
@@ -81,8 +81,8 @@ describe('generateChunk', () => {
 
   it('hazard counts match the density at the start and at full ramp', () => {
     const hi = mean(chunks(21, 1, 1000, 300).map((c) => c.hazards.length));
-    // densities retuned in Task 11: 4 per 100 m at full ramp, 1 per 100 m at start.
-    expect(Math.abs(hi - 2) / 2).toBeLessThan(0.1);
+    // densities retuned in Task 11: 2.4 per 100 m at full ramp, 1 per 100 m at start.
+    expect(Math.abs(hi - 1.2) / 1.2).toBeLessThan(0.1);
     const lo = mean(chunks(21, 1, 1000, 0).map((c) => c.hazards.length));
     expect(Math.abs(lo - 0.5) / 0.5).toBeLessThan(0.15);
   });
@@ -138,6 +138,6 @@ describe('generateChunk', () => {
   it('config constants have the specified values', () => {
     expect(ROAD).toEqual({ chunkLengthM: 50, halfWidthM: 3.5, minHazardSpacingM: 6, chunkMarginM: 3, maxCurvature: 0.02, bendThreshold: 0.01, bendCurbMultiplier: 3 });
     expect(TRAFFIC).toEqual({ sameDirKmh: [40, 70], oncomingKmh: [40, 80] });
-    expect(HAZARD_WEIGHTS).toEqual({ gropita: 30, gropality: 25, 'groapa-de-gunoi': 15, 'craterul-national': 4, 'bordura-protocol': 10, 'bordura-everest': 4, 'capac-dansator': 8, 'gura-iadului': 4 });
+    expect(HAZARD_WEIGHTS).toEqual({ gropita: 45, gropality: 10, 'groapa-de-gunoi': 3, 'craterul-national': 0.5, 'bordura-protocol': 20, 'bordura-everest': 1, 'capac-dansator': 20, 'gura-iadului': 0.5 });
   });
 });

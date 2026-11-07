@@ -1,12 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { applyEvent, createRun, scoreTimeMs } from './run';
-import { SPEED_FACTOR } from './config';
+import { TOP_SPEED_KMH } from './config';
 import type { HazardId } from './hazards';
 import type { RunEvent, RunState } from './types';
 
 const drive = (): RunState => applyEvent(createRun(), { type: 'start' }).state;
 const tick = (s: RunState, dtS: number, steerInput = 0) => applyEvent(s, { type: 'tick', dtS, steerInput });
-const hit = (s: RunState, hazardId: HazardId, instanceId: string, speedKmh = SPEED_FACTOR.divisorKmh) =>
+const hit = (s: RunState, hazardId: HazardId, instanceId: string, speedKmh = TOP_SPEED_KMH) =>
   applyEvent(s, { type: 'hazardHit', hazardId, instanceId, speedKmh });
 const advance = (s: RunState, totalS: number): RunState => {
   let cur = s;
@@ -131,8 +131,8 @@ describe('run state machine', () => {
     });
     it('NaN speed uses the minimum speed factor and keeps health finite', () => {
       const r = hit(drive(), 'gropality', 'a', NaN);
-      expect(r.outputs).toEqual([{ type: 'hazardHit', hazardId: 'gropality', damage: 8 }]);
-      expect(r.state.health).toBe(992);
+      expect(r.outputs).toEqual([{ type: 'hazardHit', hazardId: 'gropality', damage: 3 }]);
+      expect(r.state.health).toBe(997);
       expect(Number.isFinite(r.state.health)).toBe(true);
     });
     it('does not mutate the previous state or its Set', () => {
@@ -180,7 +180,7 @@ describe('run state machine', () => {
   });
 
   describe('part detachment', () => {
-    // explicit hit speeds rescaled in Task 11 to the tuned SPEED_FACTOR.divisorKmh (300 km/h = factor 1, 600 = factor 2).
+    // hit speeds expressed relative to TOP_SPEED_KMH (tuned in Task 11: tier damage applies at top speed).
     it('emits partDetached once when crossing a threshold and accumulates', () => {
       let s = drive();
       let outs: RunOutputs = [];
@@ -192,23 +192,24 @@ describe('run state machine', () => {
       expect(s.damageTaken).toBe(200);
       expect(outs.filter((o) => o.type === 'partDetached')).toEqual([{ type: 'partDetached', part: 'bumper' }]);
       expect(s.detached).toEqual(['bumper']);
-      const r = hit(s, 'craterul-national', 'big', 300); // 320 taken, then more
+      const r = hit(s, 'craterul-national', 'big'); // 320 taken, then more
       expect(r.state.detached).toEqual(['bumper']);
-      const r2 = hit(r.state, 'craterul-national', 'big2', 300); // 440 taken crosses hood
+      const r2 = hit(r.state, 'craterul-national', 'big2'); // 440 taken crosses hood
       expect(r2.state.detached).toEqual(['bumper', 'hood']);
       expect(r2.outputs).toEqual([
         { type: 'hazardHit', hazardId: 'craterul-national', damage: 120 },
         { type: 'partDetached', part: 'hood' },
       ]);
     });
-    it('emits hazardHit, parts in threshold order, then wrecked', () => {
+    it('emits hazardHit, the final part, then wrecked', () => {
       let s = advance(drive(), 180);
-      for (let i = 0; i < 7; i++) s = hit(s, 'craterul-national', `x${i}`).state; // 840 taken
-      const r = hit(s, 'craterul-national', 'last', 600); // 240 damage: 1080
+      for (let i = 0; i < 6; i++) s = hit(s, 'craterul-national', `x${i}`).state; // 720 taken
+      for (let i = 0; i < 3; i++) s = hit(s, 'groapa-de-gunoi', `g${i}`).state; // 870 taken
+      s = hit(s, 'gropita', 'p').state; // 880 taken
+      const r = hit(s, 'craterul-national', 'last'); // 120 damage: 1000
       expect(r.state.phase).toBe('wrecked');
       expect(r.outputs).toEqual([
-        { type: 'hazardHit', hazardId: 'craterul-national', damage: 240 },
-        { type: 'partDetached', part: 'exhaust' },
+        { type: 'hazardHit', hazardId: 'craterul-national', damage: 120 },
         { type: 'partDetached', part: 'transmission' },
         { type: 'wrecked', timeMs: 180000 },
       ]);
@@ -217,7 +218,7 @@ describe('run state machine', () => {
     it('emits multiple parts from one hit in threshold order', () => {
       let s = advance(drive(), 180);
       for (let i = 0; i < 7; i++) s = hit(s, 'craterul-national', `x${i}`).state; // 840 taken
-      const r = hit(s, 'craterul-national', 'y', 300); // 960: exhaust (850), transmission (950)
+      const r = hit(s, 'craterul-national', 'y'); // 960: exhaust (850), transmission (950)
       expect(r.outputs).toEqual([
         { type: 'hazardHit', hazardId: 'craterul-national', damage: 120 },
         { type: 'partDetached', part: 'exhaust' },

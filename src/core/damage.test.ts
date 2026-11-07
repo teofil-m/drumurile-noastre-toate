@@ -3,10 +3,10 @@ import { applyDamage, hitDamage, newlyDetached, speedFactor } from './damage';
 import { PART_THRESHOLDS, SPEED_FACTOR, TIER_DAMAGE } from './config';
 
 describe('damage', () => {
-  it.each([[300, 1], [0, 0.3], [60, 0.3], [450, 1.5], [600, 2], [1200, 2], [110, 110 / 300], [NaN, 0.3], [-30, 0.3], [Infinity, 2]])('speedFactor(%p) = %p', (s, f) => {
+  it.each([[110, 1], [0, 0.1], [5, 0.1], [55, 0.5], [82.5, 0.75], [200, 1], [NaN, 0.1], [-30, 0.1], [Infinity, 1]])('speedFactor(%p) = %p', (s, f) => {
     expect(speedFactor(s)).toBeCloseTo(f, 10);
   });
-  it.each([['large', 300, 50], ['small', 0, 3], ['epic', 600, 240], ['medium', 450, 38], ['small', NaN, 3]] as const)('hitDamage(%s,%p) = %p', (t, s, d) => {
+  it.each([['large', 110, 50], ['small', 110, 10], ['epic', 110, 120], ['medium', 110, 25], ['small', 0, 1], ['epic', 55, 60], ['medium', 82.5, 19], ['small', NaN, 1]] as const)('hitDamage(%s,%p) = %p', (t, s, d) => {
     expect(hitDamage(t, s)).toBe(d);
   });
   it('subtracts damage normally', () => { expect(applyDamage(1000, 50, 0)).toEqual({ health: 950, clampAbsorbed: false }); });
@@ -28,9 +28,9 @@ describe('damage', () => {
     expect(newlyDetached(199, 200)).toEqual(['bumper']);
     expect(newlyDetached(0, 1000)).toEqual(['bumper', 'hood', 'doorLeft', 'doorRight', 'exhaust', 'transmission']);
   });
-  // SPEED_FACTOR.divisorKmh tuned in Task 11 (50 -> 300) so the greedy bot wrecks naturally at 190-240 s.
+  // SPEED_FACTOR tuned in Task 11 (divisor 110 = TOP_SPEED_KMH, min 0.1, max 1) so tiers apply at top speed (AC 12).
   it('pins config values', () => {
-    expect(SPEED_FACTOR).toEqual({ divisorKmh: 300, min: 0.3, max: 2.0 });
+    expect(SPEED_FACTOR).toEqual({ divisorKmh: 110, min: 0.1, max: 1.0 });
     expect(TIER_DAMAGE).toEqual({ small: 10, medium: 25, large: 50, epic: 120 });
     expect(PART_THRESHOLDS).toEqual([
       { part: 'bumper', damageTaken: 200 }, { part: 'hood', damageTaken: 400 }, { part: 'doorLeft', damageTaken: 550 },

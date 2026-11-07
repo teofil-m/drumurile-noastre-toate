@@ -32,11 +32,11 @@ describe('greedy bot balance guard', () => {
   });
   // Characterisation of the tuned config (Task 11): hit counts pin the hit/target logic. Re-pin if the ramp is retuned.
   it.each([
-    [1, 204.37, 63, 96],
-    [2, 204.67, 64, 90],
-    [3, 205.4, 67, 101],
-    [4, 204.02, 67, 91],
-    [5, 217.13, 81, 110],
+    [1, 200.28, 34, 71],
+    [2, 226.32, 37, 83],
+    [3, 214.18, 42, 78],
+    [4, 202.23, 42, 73],
+    [5, 194.57, 44, 75],
   ])('seed %i: pinned outcome', (seed, t, potholes, hits) => {
     const r = simulateGreedyBot(seed);
     expect(r.wreckTimeS!).toBeCloseTo(t, 1);
@@ -44,7 +44,7 @@ describe('greedy bot balance guard', () => {
     expect(r.hits).toBe(hits);
   });
   it('counts hits before the time limit', () => {
-    expect(simulateGreedyBot(3, 60)).toEqual({ wreckTimeS: null, clampAbsorbed: false, potholes: 12, hits: 20 });
-    expect(simulateGreedyBot(9, 100)).toEqual({ wreckTimeS: null, clampAbsorbed: false, potholes: 31, hits: 39 });
+    expect(simulateGreedyBot(3, 60)).toEqual({ wreckTimeS: null, clampAbsorbed: false, potholes: 7, hits: 17 });
+    expect(simulateGreedyBot(9, 100)).toEqual({ wreckTimeS: null, clampAbsorbed: false, potholes: 21, hits: 34 });
   });
 });
