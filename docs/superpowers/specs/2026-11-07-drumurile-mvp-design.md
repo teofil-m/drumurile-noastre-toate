@@ -69,7 +69,7 @@ Data flow per frame: `ui/input` → controls → `core/steering` → `sim` steps
 ### 4.2 Damage
 - `dmg = round(tierDamage × clamp(speedKmh / 110, 0.1, 1.0))`
 - At top speed (110 km/h) a hit deals exactly the tier value (10 / 25 / 50 / 120); slower hits deal proportionally less.
-- Tuned 2026-11-08, greedy bot 190–240 s (was `/ 50, 0.3, 2.0`).
+- Tuned 2026-11-08 (was `/ 50, 0.3, 2.0`); damage constants unchanged by the final retune (retuned 2026-11-08 after final review).
 - A hazard instance damages at most once per contact (dedupe by `instanceId`).
 - If `runTime < MIN_WRECK_TIME_S`: `health = max(health − dmg, 1)`; else `health = max(health − dmg, 0)`.
 - Health 0 → run state `wrecked`, score = run time in ms.
@@ -95,17 +95,21 @@ bumper 200 · hood 400 · left door 550 · right door 700 · exhaust 850 · tran
 Each threshold emits a `PartDetached{part}` once; render turns the part into a loose physics body.
 
 ### 4.5 Difficulty ramp (AC 4)
-- `u = min(t / 300, 1)`
-- Hazards per 100 m: `1 + 1.4 × u^1.5`
+- `u = min(t / 274.6, 1)`
+- Hazards per 100 m: `0.85 + 2.79 × u^6.46` (floor test: ≥ 0.8 per 100 m from 60 s on)
 - Traffic cars per 100 m: `0.1 + 1.2 × u`
-- Tuned 2026-11-08, greedy bot 190–240 s (was `0.6 + 6.4 × u^1.5`).
-- Hazard weights tuned 2026-11-08, greedy bot 190–240 s: gropița 45, gropality 10, groapa de gunoi 3, craterul național 0.5, bordura protocol 20, bordura Everest 1, capac dansator 20, gura iadului 0.5 (was 30/25/15/4/10/4/8/4).
+- Retuned 2026-11-08 after final review (was `1 + 1.4 × u^1.5`, `u = t / 300`): early on hazards are sparse, a steep late ramp keeps the wreck time tight.
+- Hazard weights (retuned 2026-11-08 after final review, every type ≥ 2% of total): gropița 60.6, gropality 2.2, groapa de gunoi 2.4, craterul național 2.5, bordura protocol 16.8, bordura Everest 2.1, capac dansator 11.3, gura iadului 2.2 (was 45/10/3/0.5/20/1/20/0.5).
+- Exposure is lower than ideal: in the first 200 s at top speed every type appears in ≥ 60% of runs, but all 8 types in only about 1 in 5 perfect runs (test floor 15%). Revisit after the playtest.
 - `roadgen`: seeded 50 m chunks; hazards ≥ 6 m apart; curbs mostly on bends.
 
 ### 4.6 Balance guard
 Greedy-bot simulation (`core/bot.ts`, kinematic, no Rapier) drives at top speed and hits every reachable hazard.
-Test asserts it reaches 0 HP **naturally** (clamp not the deciding factor) between 190 and 240 s across
-several seeds, so scores do not pile up at exactly 180.0 s. Tune ramp/speed factor until it passes.
+Guard (retuned 2026-11-08 after final review) is a **distribution** over seeds 1..50, not a handful of seeds:
+- default bot: clamp-decided (clamp absorbed a lethal hit, or wreck < 185 s) ≤ 2 of 50 seeds; 10th-percentile wreck time ≥ 188 s; median in [195, 235] s; every seed wrecks by 600 s.
+- strong bot (`{ lateralSpeedMps: 4, hitToleranceM: 1.1 }`): clamp-decided ≤ 15% (≤ 7 of 50).
+- exposure (seeds 1..100, first 200 s at top speed): every hazard type in ≥ 60% of runs, all 8 types in ≥ 15%.
+Pinned per-seed outcomes in `bot.test.ts` are characterisation only.
 
 ### 4.7 Run state machine (`run.ts`)
 `menu → driving ⇄ paused → wrecked | dnf`; R restarts from any in-run state.

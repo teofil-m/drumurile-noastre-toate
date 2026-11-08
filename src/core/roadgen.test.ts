@@ -81,10 +81,10 @@ describe('generateChunk', () => {
 
   it('hazard counts match the density at the start and at full ramp', () => {
     const hi = mean(chunks(21, 1, 1000, 300).map((c) => c.hazards.length));
-    // densities retuned in Task 11: 2.4 per 100 m at full ramp, 1 per 100 m at start.
-    expect(Math.abs(hi - 1.2) / 1.2).toBeLessThan(0.1);
+    // retuned 2026-11-08: 3.64 per 100 m at full ramp (1.82 per chunk), 0.85 per 100 m at start.
+    expect(Math.abs(hi - 1.82) / 1.82).toBeLessThan(0.1);
     const lo = mean(chunks(21, 1, 1000, 0).map((c) => c.hazards.length));
-    expect(Math.abs(lo - 0.5) / 0.5).toBeLessThan(0.15);
+    expect(Math.abs(lo - 0.425) / 0.425).toBeLessThan(0.15);
   });
 
   it('traffic count matches the density', () => {
@@ -93,10 +93,10 @@ describe('generateChunk', () => {
   });
 
   it('pins traffic lane and speed range for known (seed, index): oncoming lane -1 and same-direction lane 1 (roadgen.ts:54)', () => {
-    const a = generateChunk(1, 3, 200).traffic;
+    const a = generateChunk(1, 2, 200).traffic;
     expect(a).toHaveLength(1);
     expect(a[0]!.lane).toBe(-1);
-    expect(a[0]!.speedKmh).toBeCloseTo(54.59029605612159, 9);
+    expect(a[0]!.speedKmh).toBeCloseTo(72.93350657448173, 9);
     const b = generateChunk(1, 6, 200).traffic;
     expect(b).toHaveLength(1);
     expect(b[0]!.lane).toBe(1);
@@ -148,6 +148,6 @@ describe('generateChunk', () => {
   it('config constants have the specified values', () => {
     expect(ROAD).toEqual({ chunkLengthM: 50, halfWidthM: 3.5, minHazardSpacingM: 6, chunkMarginM: 3, maxCurvature: 0.02, bendThreshold: 0.01, bendCurbMultiplier: 3 });
     expect(TRAFFIC).toEqual({ sameDirKmh: [40, 70], oncomingKmh: [40, 80] });
-    expect(HAZARD_WEIGHTS).toEqual({ gropita: 45, gropality: 10, 'groapa-de-gunoi': 3, 'craterul-national': 0.5, 'bordura-protocol': 20, 'bordura-everest': 1, 'capac-dansator': 20, 'gura-iadului': 0.5 });
+    expect(HAZARD_WEIGHTS).toEqual({ gropita: 60.6, gropality: 2.2, 'groapa-de-gunoi': 2.4, 'craterul-national': 2.5, 'bordura-protocol': 16.8, 'bordura-everest': 2.1, 'capac-dansator': 11.3, 'gura-iadului': 2.2 });
   });
 });
