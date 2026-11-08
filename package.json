@@ -12,7 +12,8 @@
     "test": "vitest run",
     "mutate": "stryker run",
     "api:dev": "wrangler dev --config api/wrangler.toml",
-    "api:typecheck": "tsc -p api/tsconfig.json"
+    "api:typecheck": "tsc -p api/tsconfig.json",
+    "deploy:web": "npm run build && wrangler deploy"
   },
   "keywords": [],
   "type": "module",

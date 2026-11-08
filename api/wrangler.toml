@@ -3,7 +3,7 @@ main = "src/index.ts"
 compatibility_date = "2026-11-01"
 
 [vars]
-ALLOWED_ORIGINS = "https://drumurile-superpowers.pages.dev,http://localhost:5173"
+ALLOWED_ORIGINS = "https://drumurile-superpowers.mititelu-teofil.workers.dev,https://drumurile-superpowers.pages.dev,http://localhost:5173"
 
 [[d1_databases]]
 binding = "DB"

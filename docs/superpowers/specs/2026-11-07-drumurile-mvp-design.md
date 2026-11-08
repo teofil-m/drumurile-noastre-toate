@@ -18,7 +18,7 @@ It does not change requirements; where it picks a value the requirements left op
 | Testing discipline | Strict red/green/refactor TDD. StrykerJS mutation testing on pure logic (`src/core`, `src/shared`, `api/src/logic`), CI break threshold 80%. Rendering/physics glue excluded from mutation. |
 | Backend | Cloudflare Worker + D1 built, tested and **deployed in this run** (own Worker + own D1 per branch). |
 | Minimum wreck time | `MIN_WRECK_TIME_S = 180`, one constant in `src/shared`, used by game and API. Guaranteed by ramp tuning **plus** a damage clamp (health ≥ 1 before 180 s). |
-| Frontend hosting | **Cloudflare Pages**, project `drumurile-superpowers` (→ `drumurile-superpowers.pages.dev`). Deviation from "GitHub Pages first" because Pages is one site per repo and four branches compete; build stays static so GitHub Pages remains possible. Log this deviation in `plan/comparison.md` on `main`. |
+| Frontend hosting | **Cloudflare Workers static assets** (changed 2026-11-08: new Pages projects now route to Workers; URL `https://drumurile-superpowers.mititelu-teofil.workers.dev`). Originally planned: **Cloudflare Pages**, project `drumurile-superpowers` (→ `drumurile-superpowers.pages.dev`). Deviation from "GitHub Pages first" because Pages is one site per repo and four branches compete; build stays static so GitHub Pages remains possible. Log this deviation in `plan/comparison.md` on `main`. |
 | Architecture | Pure deterministic core + thin adapters (Rapier, three.js, DOM). |
 | Car model | Procedural low-poly Dacia 1310 lookalike built from three.js primitives, no logos, detachable part meshes. CC0 Kenney/Quaternius assets only for props and traffic, credited in `CREDITS.md`. |
 

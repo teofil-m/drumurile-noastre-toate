@@ -22,3 +22,10 @@ Local dev: create `api/.dev.vars` with `IP_SALT=dev-salt`, then
 
 Deploy: `npx wrangler deploy --config api/wrangler.toml` (Worker `drumurile-api-superpowers`, D1 `drumurile-superpowers`;
 schema changes: add a file in `api/migrations/` and run `npx wrangler d1 migrations apply drumurile-superpowers --remote --config api/wrangler.toml`).
+
+## Play (superpowers branch)
+
+**https://drumurile-superpowers.mititelu-teofil.workers.dev** — WASD/arrows drive, Space handbrake, R restart, Esc pause.
+
+Deploy the game: `npm run deploy:web` (builds with Vite and deploys `dist/` as an assets-only Worker `drumurile-superpowers`, config in `wrangler.jsonc`).
+Cloudflare now routes new Pages projects to Workers, so the game is hosted as Workers static assets instead of `*.pages.dev`.

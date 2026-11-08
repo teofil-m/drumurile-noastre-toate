@@ -1,0 +1,10 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  // Game frontend: assets-only Worker serving the Vite build. The API has its own config in api/wrangler.toml.
+  "name": "drumurile-superpowers",
+  "compatibility_date": "2026-11-08",
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "single-page-application"
+  }
+}
