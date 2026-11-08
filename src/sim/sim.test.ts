@@ -35,8 +35,8 @@ describe('sim (headless Rapier)', () => {
     let max = 0;
     let last = 0;
     for (let i = 0; i < 600; i++) {
-      sim.ensureRoadAhead(sim.step(COAST, 0, DT).snapshot.s);
       const { snapshot } = sim.step(GAS, 0, DT);
+      sim.ensureRoadAhead(0);
       max = Math.max(max, snapshot.speedKmh);
       last = snapshot.speedKmh;
     }
@@ -92,7 +92,7 @@ describe('sim (headless Rapier)', () => {
         maxTilt = Math.max(maxTilt, Math.hypot(q[0], q[2]));
       }
     }
-    expect(hits.length).toBeGreaterThanOrEqual(1);
+    expect(hits.filter((e) => e.type === 'hazardHit' && e.instanceId === 'p1')).toHaveLength(1);
     expect(hits[0]).toMatchObject({ type: 'hazardHit', hazardId: 'groapa-de-gunoi', instanceId: 'p1' });
     expect(maxY).toBeGreaterThan(0.9);
     expect(maxTilt).toBeGreaterThan(0.01);
@@ -119,6 +119,27 @@ describe('sim (headless Rapier)', () => {
       return top;
     };
     expect(await peak('craterul-national')).toBeGreaterThan(await peak('gropita'));
+  });
+
+  it('a car off the road at lateral 10 lands on the grass instead of falling', async () => {
+    const sim = await createSim(1, { chunkSource: source(() => {}) });
+    sim.debugSetCarPose([10, 1, -20], [0, 0, 0, 1]);
+    let snap = sim.step(COAST, 0, DT).snapshot;
+    for (let i = 0; i < 120; i++) snap = sim.step(COAST, 0, DT).snapshot;
+    expect(snap.car.position[1]).toBeGreaterThan(-1);
+    sim.dispose();
+  });
+
+  it('a car upside down is put back upright within 2.5 s', async () => {
+    const sim = await createSim(1, { chunkSource: source(() => {}) });
+    sim.debugSetCarPose([0, 1.5, -20], [0, 0, 1, 0]); // rolled 180 degrees about Z
+    let snap = sim.step(COAST, 0, DT).snapshot;
+    for (let i = 0; i < 150; i++) snap = sim.step(COAST, 0, DT).snapshot;
+    const [x, , z] = snap.car.quaternion;
+    const upY = 1 - 2 * (x * x + z * z);
+    expect(upY).toBeGreaterThan(0.7);
+    expect(Math.abs(snap.lateral)).toBeLessThan(2);
+    sim.dispose();
   });
 
   it('a pothole on the far side of the road does not register', async () => {

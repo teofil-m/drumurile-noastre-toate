@@ -6,7 +6,7 @@ import { generateChunk, type Chunk } from '../core/roadgen';
 import type { Controls, RunEvent } from '../core/types';
 import { hazardContacts, trafficCollision } from './contacts';
 import { RoadPath } from './roadPath';
-import { createVehicle, qAxisAngle, type Q4, type V3 } from './vehicle';
+import { createVehicle, qAxisAngle, qRotate, type Q4, type V3 } from './vehicle';
 
 export interface SimSnapshot {
   s: number;
@@ -23,6 +23,8 @@ export interface Sim {
   detach(part: Part): void;
   ensureRoadAhead(tS: number): Chunk[];
   readonly path: RoadPath;
+  /** Test-only seam: teleport the chassis (zero velocity). */
+  debugSetCarPose(position: V3, quaternion: Q4): void;
   dispose(): void;
 }
 
@@ -42,6 +44,11 @@ const CURB_HEIGHT_M: Record<string, number> = { 'bordura-protocol': 0.12, 'bordu
 const CURB_LENGTH_M = 2;
 const MAX_SPEED_MS = TOP_SPEED_KMH / 3.6;
 const PART_SIZE_M = 0.3;
+const GROUND_HALF_WIDTH_M = 25;
+const VOID_Y_M = -3;
+const FLIP_UP_Y = 0.3;
+const FLIP_RESET_AFTER_S = 1.5;
+const RESET_HEIGHT_M = 1;
 
 interface LoadedChunk { chunk: Chunk; colliders: RAPIER.Collider[] }
 interface TrafficCar { instanceId: string; s: number; lane: 1 | -1; speedMs: number; body: RAPIER.RigidBody }
@@ -66,6 +73,7 @@ export async function createSim(seed: number, opts: SimOptions = {}): Promise<Si
   const vehicle = createVehicle(RAPIER, world, { x: startLateral, y: 1, z: -START_S_M });
   let s = START_S_M;
   let lateral = startLateral;
+  let flippedForS = 0;
 
   const addFixed = (cx: number, cy: number, cz: number, hx: number, hy: number, hz: number, heading: number): RAPIER.Collider => {
     const body = world.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation(cx, cy, cz).setRotation(quatOf(yaw(heading))));
@@ -98,6 +106,8 @@ export async function createSim(seed: number, opts: SimOptions = {}): Promise<Si
     for (let a = chunk.startS; a < chunk.startS + ROAD.chunkLengthM - 1e-9; a += SEGMENT_M) {
       const p = path.pose(a + SEGMENT_M / 2);
       colliders.push(addFixed(p.x, -0.1, p.z, half, 0.1, SEGMENT_M / 2 + 0.05, p.heading));
+      // grass: slightly below the road so leaving the tarmac is a bump, not a fall
+      colliders.push(addFixed(p.x, -0.13, p.z, GROUND_HALF_WIDTH_M, 0.1, SEGMENT_M / 2 + 0.05, p.heading));
     }
     for (const h of chunk.hazards) {
       const height = CURB_HEIGHT_M[h.hazardId];
@@ -188,10 +198,10 @@ export async function createSim(seed: number, opts: SimOptions = {}): Promise<Si
       world.step();
 
       const v = vehicle.chassis.linvel();
-      const speed = Math.hypot(v.x, v.y, v.z);
+      const speed = Math.hypot(v.x, v.z); // horizontal only
       if (speed > MAX_SPEED_MS) {
         const k = MAX_SPEED_MS / speed;
-        vehicle.chassis.setLinvel({ x: v.x * k, y: v.y * k, z: v.z * k }, true);
+        vehicle.chassis.setLinvel({ x: v.x * k, y: v.y, z: v.z * k }, true);
       }
       const speedKmh = Math.min(speed, MAX_SPEED_MS) * 3.6;
 
@@ -200,6 +210,20 @@ export async function createSim(seed: number, opts: SimOptions = {}): Promise<Si
       const proj = path.project(t.x, t.z, s);
       s = proj.s;
       lateral = proj.lateral;
+
+      // recovery: fell into the void, or stuck upside down / on its side
+      const rot = vehicle.chassis.rotation();
+      const upY = qRotate([rot.x, rot.y, rot.z, rot.w], [0, 1, 0])[1];
+      flippedForS = upY < FLIP_UP_Y ? flippedForS + dtS : 0;
+      if (t.y < VOID_Y_M || flippedForS > FLIP_RESET_AFTER_S) {
+        const w = path.toWorld(s, 0);
+        vehicle.chassis.setTranslation({ x: w.x, y: RESET_HEIGHT_M, z: w.z }, true);
+        vehicle.chassis.setRotation(quatOf(yaw(path.pose(s).heading)), true);
+        vehicle.chassis.setLinvel({ x: 0, y: 0, z: 0 }, true);
+        vehicle.chassis.setAngvel({ x: 0, y: 0, z: 0 }, true);
+        lateral = 0;
+        flippedForS = 0;
+      }
 
       const events: RunEvent[] = [];
       const hazards = [...loaded.values()].flatMap((l) => l.chunk.hazards);
@@ -211,6 +235,12 @@ export async function createSim(seed: number, opts: SimOptions = {}): Promise<Si
       }
       if (trafficCollision(s, lateral, traffic, LANE_OFFSET_M)) events.push({ type: 'trafficCollision' });
       return { snapshot: snapshot(speedKmh), events };
+    },
+    debugSetCarPose(position, quaternion) {
+      vehicle.chassis.setTranslation({ x: position[0], y: position[1], z: position[2] }, true);
+      vehicle.chassis.setRotation(quatOf(quaternion), true);
+      vehicle.chassis.setLinvel({ x: 0, y: 0, z: 0 }, true);
+      vehicle.chassis.setAngvel({ x: 0, y: 0, z: 0 }, true);
     },
     dispose() {
       world.free();
