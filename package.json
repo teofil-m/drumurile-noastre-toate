@@ -1,6 +1,6 @@
 {
   "name": "drumurile-noastre",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Drumurile noastre toate, se vor mai construi vreodata?",
   "directories": {
     "doc": "docs"
@@ -22,6 +22,7 @@
     "@stryker-mutator/typescript-checker": "^10.1.1",
     "@stryker-mutator/vitest-runner": "^10.1.1",
     "@types/three": "^0.187.0",
+    "happy-dom": "^21.0.4",
     "typescript": "~5.9",
     "vite": "^8.3.6",
     "vitest": "^5.1.0",

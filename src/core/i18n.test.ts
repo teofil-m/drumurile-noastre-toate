@@ -29,6 +29,16 @@ const RO_EXPECTED = {
   'leaderboard.empty': 'Niciun scor încă',
   'achievements.locked': 'Blocat',
   'error.physics': 'Motorul fizic nu a pornit',
+  'menu.title': 'Drumurile noastre',
+  'pause.restart': 'Repornește (R)',
+  'pause.menu': 'Meniu',
+  'nav.back': 'Înapoi',
+  'nav.loading': 'Se încarcă…',
+  'result.nicknameInvalid': 'Poreclă invalidă (2–16 litere, cifre, spațiu, _ sau -)',
+  'result.leaderboard': 'Clasament',
+  'result.menu': 'Meniu',
+  'result.submitting': 'Se trimite…',
+  'result.failed': 'Trimiterea a eșuat',
 };
 
 const EN_EXPECTED = {
@@ -57,6 +67,16 @@ const EN_EXPECTED = {
   'leaderboard.empty': 'No scores yet',
   'achievements.locked': 'Locked',
   'error.physics': 'Physics engine failed to start',
+  'menu.title': 'Drumurile noastre',
+  'pause.restart': 'Restart (R)',
+  'pause.menu': 'Menu',
+  'nav.back': 'Back',
+  'nav.loading': 'Loading…',
+  'result.nicknameInvalid': 'Invalid nickname (2–16 letters, digits, space, _ or -)',
+  'result.leaderboard': 'Leaderboard',
+  'result.menu': 'Menu',
+  'result.submitting': 'Submitting…',
+  'result.failed': 'Submit failed',
 };
 
 describe('DICT', () => {

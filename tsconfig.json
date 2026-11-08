@@ -6,7 +6,8 @@
     "lib": ["ES2022", "DOM"],
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "types": [],
+    "types": ["vite/client"],
+    "resolveJsonModule": true,
     "skipLibCheck": true,
     "noEmit": true
   },
