@@ -23,12 +23,16 @@ export function createRng(seed: number): Rng {
     int: (minIncl, maxExcl) => Math.floor(range(minIncl, maxExcl)),
     pick<T>(items: readonly { weight: number; value: T }[]): T {
       const total = items.reduce((sum, it) => sum + it.weight, 0);
+      if (!(total > 0)) throw new Error('pick: no items with positive weight');
       let r = next() * total;
+      let last: T | undefined;
       for (const it of items) {
+        if (it.weight <= 0) continue;
         if (r < it.weight) return it.value;
         r -= it.weight;
+        last = it.value;
       }
-      throw new Error('pick: no items with positive weight');
+      return last as T; // float fall-through: the last item with positive weight
     },
   };
 }

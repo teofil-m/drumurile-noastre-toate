@@ -1,3 +1,4 @@
+/** Implementations must never throw: core does not catch. The localStorage adapter must swallow errors. */
 export interface KeyValueStore {
   get(key: string): string | null;
   set(key: string, value: string): void;

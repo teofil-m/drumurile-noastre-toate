@@ -32,6 +32,13 @@ describe('rng', () => {
     expect(hashSeed(1, 2)).toBe(1269123516);
     expect(hashSeed()).toBe(2166136261);
   });
+  it('pick returns the last positive-weight item on float fall-through instead of throwing', () => {
+    // Infinity weight is a degenerate stand-in: r = next() * Infinity = Infinity, never < weight, and NaN after subtraction.
+    expect(createRng(3).pick([{ weight: 1, value: 'a' }, { weight: Infinity, value: 'b' }, { weight: 0, value: 'z' }])).toBe('b');
+  });
+  it('pick throws when every weight is zero', () => {
+    expect(() => createRng(1).pick([{ weight: 0, value: 'a' }])).toThrow('pick: no items with positive weight');
+  });
   it('pick throws when there is nothing to pick', () => {
     expect(() => createRng(1).pick([])).toThrow('pick: no items with positive weight');
   });

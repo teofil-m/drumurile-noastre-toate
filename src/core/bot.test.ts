@@ -21,6 +21,12 @@ describe('greedy bot balance guard', () => {
       if (w !== null) expect(w).toBeGreaterThanOrEqual(180);
     }
   });
+  it('opts override the bot constants (defaults unchanged)', () => {
+    expect(simulateGreedyBot(1, 600, {})).toEqual(simulateGreedyBot(1));
+    expect(simulateGreedyBot(1, 600, { lateralSpeedMps: 4, hitToleranceM: 1.1 })).not.toEqual(simulateGreedyBot(1));
+    expect(simulateGreedyBot(1, 60, { hitToleranceM: 0.1 }).hits).toBeLessThan(simulateGreedyBot(1, 60).hits);
+    expect(simulateGreedyBot(1, 60, { lateralSpeedMps: 0.1 }).hits).not.toBe(simulateGreedyBot(1, 60).hits);
+  });
   it('is deterministic', () => {
     expect(simulateGreedyBot(7)).toEqual(simulateGreedyBot(7));
   });

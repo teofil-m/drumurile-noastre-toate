@@ -9,7 +9,11 @@ export const BOT = { lateralSpeedMps: 2.5, hitToleranceM: 0.9, dtS: 1 / 60 };
 const TARGET_EDGE_INSET_M = 0.5;
 const LOOK_AHEAD_CHUNKS = 1;
 
-export function simulateGreedyBot(seed: number, maxTimeS = 600): BotResult {
+export interface BotOptions { lateralSpeedMps?: number; hitToleranceM?: number }
+
+export function simulateGreedyBot(seed: number, maxTimeS = 600, opts: BotOptions = {}): BotResult {
+  const lateralSpeedMps = opts.lateralSpeedMps ?? BOT.lateralSpeedMps;
+  const hitToleranceM = opts.hitToleranceM ?? BOT.hitToleranceM;
   let state = applyEvent(createRun(), { type: 'start' }).state;
   const chunks = new Map<number, Chunk>();
   const chunkAt = (index: number): Chunk => {
@@ -38,12 +42,12 @@ export function simulateGreedyBot(seed: number, maxTimeS = 600): BotResult {
     }
     if (target) {
       const goal = Math.min(maxReach, Math.max(-maxReach, target.lateral));
-      const maxStep = BOT.lateralSpeedMps * BOT.dtS;
+      const maxStep = lateralSpeedMps * BOT.dtS;
       lateral += Math.min(maxStep, Math.max(-maxStep, goal - lateral));
     }
 
     for (const h of chunkAt(index).hazards) {
-      if (h.s > prevS && h.s <= s && Math.abs(lateral - h.lateral) <= BOT.hitToleranceM) {
+      if (h.s > prevS && h.s <= s && Math.abs(lateral - h.lateral) <= hitToleranceM) {
         state = applyEvent(state, { type: 'hazardHit', hazardId: h.hazardId, instanceId: h.instanceId, speedKmh: TOP_SPEED_KMH }).state;
       }
     }

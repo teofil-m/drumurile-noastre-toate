@@ -40,7 +40,7 @@ export function validateSubmission(input: unknown): ValidationResult {
   const { nickname, timeMs, potholes, clientVersion } = obj;
 
   if (typeof nickname !== 'string') return fail('nickname_invalid');
-  const trimmed = nickname.trim();
+  const trimmed = nickname.trim().normalize('NFC');
   if (!NICKNAME_RE.test(trimmed)) return fail('nickname_invalid');
 
   if (typeof timeMs !== 'number' || !Number.isInteger(timeMs)) return fail('time_invalid');

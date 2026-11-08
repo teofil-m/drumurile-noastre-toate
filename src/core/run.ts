@@ -23,16 +23,16 @@ export function scoreTimeMs(state: RunState): number {
   return Math.round(state.timeS * 1000);
 }
 
-interface Result {
+export interface ApplyResult {
   state: RunState;
   outputs: RunOutput[];
 }
 
-function noop(state: RunState): Result {
+function noop(state: RunState): ApplyResult {
   return { state, outputs: [] };
 }
 
-function applyTick(state: RunState, dtS: number, steerInput: number): Result {
+function applyTick(state: RunState, dtS: number, steerInput: number): ApplyResult {
   const dt = Number.isFinite(dtS) ? Math.min(MAX_TICK_S, Math.max(0, dtS)) : 0;
   const resets = Number.isFinite(steerInput) && Math.abs(steerInput) >= FARA_MAINI.steerDeadzone;
   return {
@@ -45,7 +45,7 @@ function applyTick(state: RunState, dtS: number, steerInput: number): Result {
   };
 }
 
-function applyHazardHit(state: RunState, event: Extract<RunEvent, { type: 'hazardHit' }>): Result {
+function applyHazardHit(state: RunState, event: Extract<RunEvent, { type: 'hazardHit' }>): ApplyResult {
   if (state.hitInstanceIds.has(event.instanceId)) return noop(state);
   const hazard = getHazard(event.hazardId);
   const damage = hitDamage(hazard.tier, event.speedKmh);
@@ -77,7 +77,7 @@ function applyHazardHit(state: RunState, event: Extract<RunEvent, { type: 'hazar
   return { state: next, outputs };
 }
 
-export function applyEvent(state: RunState, event: RunEvent): Result {
+export function applyEvent(state: RunState, event: RunEvent): ApplyResult {
   switch (event.type) {
     case 'start':
       return state.phase === 'menu' ? { state: { ...state, phase: 'driving' }, outputs: [] } : noop(state);

@@ -3,6 +3,11 @@ import { hazardDensityPer100m, trafficDensityPer100m } from './difficulty';
 import { HAZARD_IDS, getHazard, type HazardId } from './hazards';
 import { createRng, hashSeed, type Rng } from './rng';
 
+/**
+ * Conventions: `lateral` is metres from the road centreline, + = right of centre in the driving direction.
+ * `lane: 1` = right lane, same direction as the player (Romania drives on the right); `-1` = left lane, oncoming.
+ * `curvature` is 1/m, + = road bends right.
+ */
 export interface HazardSpawn { instanceId: string; hazardId: HazardId; s: number; lateral: number }
 export interface TrafficSpawn { instanceId: string; s: number; lane: 1 | -1; speedKmh: number }
 export interface Chunk { index: number; startS: number; curvature: number; hazards: HazardSpawn[]; traffic: TrafficSpawn[] }

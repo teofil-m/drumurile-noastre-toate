@@ -9,6 +9,13 @@ describe('validateSubmission', () => {
     expect(validateSubmission({ ...valid, nickname: '  Ștefan_1-a  ' })).toEqual({ ok: true, value: { ...valid, nickname: 'Ștefan_1-a' } });
   });
   it.each([null, 42, 'x', [], undefined])('rejects non-object %p', (x) => { expect(err(x)).toBe('not_object'); });
+  it('normalizes a decomposed nickname to NFC', () => {
+    const r = validateSubmission({ ...valid, nickname: 'ștefan' });
+    expect(r).toEqual({ ok: true, value: { ...valid, nickname: 'ștefan' } });
+  });
+  it('rejects a missing timeMs', () => { const { timeMs: _t, ...rest } = valid; expect(err(rest)).toBe('time_invalid'); });
+  it('rejects missing potholes', () => { const { potholes: _p, ...rest } = valid; expect(err(rest)).toBe('potholes_invalid'); });
+  it('rejects a missing clientVersion', () => { const { clientVersion: _c, ...rest } = valid; expect(err(rest)).toBe('version_invalid'); });
   it('rejects unknown fields', () => { expect(err({ ...valid, extra: 1 })).toBe('unknown_field'); });
   it.each(['a', 'x'.repeat(17), '   ', 'a\tb', '<script>', 'ion😀', 42, undefined])('rejects nickname %p', (n) => { expect(err({ ...valid, nickname: n })).toBe('nickname_invalid'); });
   it.each(['ab', 'x'.repeat(16), 'Ion Popescu'])('accepts nickname %p', (n) => { expect(validateSubmission({ ...valid, nickname: n }).ok).toBe(true); });
