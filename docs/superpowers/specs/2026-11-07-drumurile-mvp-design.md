@@ -139,7 +139,7 @@ Hazard and achievement names always Romanian; subtitle in the active language (E
 
 - `POST /scores` body `{nickname, timeMs, potholes, clientVersion}` → 201 `{id}`.
 - `GET /leaderboard?board=fastest|potholes&limit=20` (limit 1–50, default 20) → `{entries:[{nickname,timeMs,potholes,createdAt}]}`;
-  fastest = `time_ms ASC`, potholes = `potholes DESC, time_ms ASC`. Edge-cached 30 s.
+  fastest = `time_ms ASC`, potholes = `potholes DESC, time_ms ASC`. (No edge cache — simplified 2026-11-08.)
 - Validation (`src/shared/score.ts`, shared by client and Worker):
   - nickname trimmed, 2–16 chars, `[\p{L}\p{N} _-]`
   - `timeMs` integer, `MIN_WRECK_TIME_S×1000 ≤ timeMs ≤ 3_600_000`
@@ -180,7 +180,8 @@ Rapier WASM init failure → error screen.
 |---|---|---|
 | `src/core`, `src/shared`, `api/src/logic` | Vitest, TDD | Stryker, break 80% |
 | Balance guard (greedy bot) | Vitest | included in core |
-| Worker integration (local D1, CORS, rate limit) | `@cloudflare/vitest-pool-workers` | no |
+| API handler (CORS, rate limit, routing) | Vitest with an in-memory `ScoreStore` fake (root project) | yes |
+| D1 store | `wrangler dev` local check + live smoke test after deploy (simplified 2026-11-08: no Workers test pool) | no |
 | `ui` helpers, input mapping | Vitest + happy-dom | no |
 | `sim`/`render` | smoke test + manual playtest | no |
 
