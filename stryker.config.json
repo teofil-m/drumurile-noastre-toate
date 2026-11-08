@@ -3,7 +3,7 @@
   "testRunner": "vitest",
   "checkers": ["typescript"],
   "tsconfigFile": "tsconfig.json",
-  "mutate": ["src/core/**/*.ts", "src/shared/**/*.ts", "api/src/logic/**/*.ts", "!src/**/*.test.ts", "!api/**/*.test.ts"],
+  "mutate": ["src/core/**/*.ts", "src/shared/**/*.ts", "api/src/logic/**/*.ts", "api/src/handler.ts", "!src/**/*.test.ts", "!api/**/*.test.ts"],
   "thresholds": { "high": 90, "low": 80, "break": 80 },
   "incremental": true,
   "incrementalFile": "reports/stryker-incremental.json",

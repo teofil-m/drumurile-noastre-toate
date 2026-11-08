@@ -1,0 +1,12 @@
+name = "drumurile-api"
+main = "src/index.ts"
+compatibility_date = "2026-11-01"
+
+[vars]
+ALLOWED_ORIGINS = "http://localhost:5173"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "drumurile-superpowers"
+database_id = "local-placeholder"
+migrations_dir = "migrations"

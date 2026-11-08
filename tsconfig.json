@@ -10,5 +10,5 @@
     "skipLibCheck": true,
     "noEmit": true
   },
-  "include": ["src", "api/src/logic"]
+  "include": ["src", "api/src/logic", "api/src/handler.ts", "api/src/store.ts", "api/src/memoryStore.ts", "api/src/handler.test.ts"]
 }

@@ -4,3 +4,5 @@ node_modules/
 dist/
 reports/
 .stryker-tmp/
+api/.dev.vars
+api/.wrangler/

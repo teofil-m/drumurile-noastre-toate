@@ -10,17 +10,21 @@
     "build": "tsc --noEmit && vite build",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "mutate": "stryker run"
+    "mutate": "stryker run",
+    "api:dev": "wrangler dev --config api/wrangler.toml",
+    "api:typecheck": "tsc -p api/tsconfig.json"
   },
   "keywords": [],
   "type": "module",
   "devDependencies": {
+    "@cloudflare/workers-types": "^5.20261108.1",
     "@stryker-mutator/core": "^10.1.1",
     "@stryker-mutator/typescript-checker": "^10.1.1",
     "@stryker-mutator/vitest-runner": "^10.1.1",
     "typescript": "~5.9",
     "vite": "^8.3.6",
-    "vitest": "^5.1.0"
+    "vitest": "^5.1.0",
+    "wrangler": "^4.158.0"
   },
   "private": true
 }
