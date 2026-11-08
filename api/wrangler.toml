@@ -8,5 +8,5 @@ ALLOWED_ORIGINS = "https://drumurile-superpowers.pages.dev,http://localhost:5173
 [[d1_databases]]
 binding = "DB"
 database_name = "drumurile-superpowers"
-database_id = "local-placeholder"
+database_id = "c1eefc23-62b2-4819-88c4-34371cc81d93"
 migrations_dir = "migrations"
