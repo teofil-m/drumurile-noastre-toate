@@ -48,6 +48,7 @@ const ui = document.getElementById('ui') as HTMLElement;
 let world: World | null = null;
 let accS = 0;
 let buildId = 0;
+let building: Promise<World | null> | null = null;
 let shakeTimer: ReturnType<typeof setTimeout> | undefined;
 
 const hud = createHud(ui);
@@ -96,7 +97,15 @@ function disposeWorld(): void {
 }
 
 /** Builds a fresh sim + renderer (new canvas) and an idle (menu-phase) session. Returns the world or null on failure. */
-async function buildWorld(): Promise<World | null> {
+function buildWorld(): Promise<World | null> {
+  const p = buildWorldImpl().finally(() => {
+    if (building === p) building = null;
+  });
+  building = p;
+  return p;
+}
+
+async function buildWorldImpl(): Promise<World | null> {
   const id = ++buildId;
   disposeWorld();
   accS = 0;
@@ -169,6 +178,7 @@ function handleOutputs(outputs: RunOutput[]): void {
       world.renderer.detach(o.part);
     } else if (o.type === 'hazardHit') {
       const tier = getHazard(o.hazardId).tier;
+      hud.popup(o.damage, tier);
       if (tier === 'large' || tier === 'epic') bigHit();
     }
   }
@@ -190,8 +200,12 @@ function finishIfOver(): void {
 async function startRun(): Promise<void> {
   screens.hide();
   hud.show(false);
-  const w = await buildWorld();
-  if (!w) return;
+  // Reuse the idle world (built at load / Menu) when there is one; otherwise (restart) build a fresh one.
+  let w: World | null;
+  if (building) w = await building;
+  else if (world && world.session.run.phase === 'menu') w = world;
+  else w = await buildWorld();
+  if (!w || world !== w || w.session.run.phase !== 'menu') return;
   apply({ type: 'start' });
   hud.show(true);
 }

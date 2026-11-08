@@ -12,6 +12,7 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #8fd3f4; col
 #stage canvas { display: block; width: 100%; height: 100%; }
 #ui { pointer-events: none; }
 #ui > * { pointer-events: auto; }
+#ui > .hud, #ui > .toasts, .popups { pointer-events: none; }
 .shake { animation: shake 0.4s; }
 @keyframes shake {
   0%, 100% { transform: translate(0, 0); }
@@ -78,3 +79,11 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #8fd3f4; col
 .toast b { display: block; font-size: 1.15rem; }
 .toast i { font-style: normal; font-size: 0.9rem; }
 @keyframes toast-in { from { transform: translateX(120%); } to { transform: none; } }
+
+/* HP number + damage pop-ups */
+.hp-text { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; line-height: 1; }
+.hud-health .bar { position: relative; }
+.popups { top: 130px; left: 18px; width: min(300px, 40vw); height: 0; pointer-events: none; }
+.dmg-pop { position: absolute; top: 0; left: 0; color: #ff5a4d; font-size: 1.6rem; font-weight: 900; white-space: nowrap; animation: dmg-rise 1s ease-out forwards; }
+.dmg-pop.big { font-size: 2.8rem; color: #ff1f1f; }
+@keyframes dmg-rise { from { transform: translateY(0); opacity: 1; } to { transform: translateY(-50px); opacity: 0; } }

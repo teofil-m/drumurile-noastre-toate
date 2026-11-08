@@ -135,6 +135,7 @@ export function createRenderer(canvas: HTMLCanvasElement): Renderer {
       traffic.dispose();
       disposeObject(dacia.root);
       gl.dispose();
+      gl.forceContextLoss();
     },
   };
 }

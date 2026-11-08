@@ -22,4 +22,18 @@ describe('hud', () => {
     hud.update(base, 'ro');
     expect(hud.el.querySelector('.hud-health')?.classList.contains('low')).toBe(false);
   });
+  it('shows the HP number', () => {
+    const hud = createHud(document.body);
+    hud.update({ ...base, health: 742 }, 'en');
+    expect(hud.el.textContent).toContain('742 / 1000 HP');
+  });
+  it('adds a damage pop-up', () => {
+    const hud = createHud(document.body);
+    hud.popup(38, 'small');
+    const pop = hud.el.querySelector('.dmg-pop');
+    expect(pop?.textContent).toBe('−38 HP');
+    expect(pop?.classList.contains('big')).toBe(false);
+    hud.popup(120, 'epic');
+    expect(hud.el.querySelectorAll('.dmg-pop.big').length).toBe(1);
+  });
 });
