@@ -21,7 +21,8 @@ function strip(chunk: Chunk, path: RoadPath, latA: number, latB: number, y: numb
     pos.push(a.x, y, a.z, b.x, y, b.z);
     if (i > 0) {
       const k = (i - 1) * 2;
-      idx.push(k, k + 2, k + 1, k + 1, k + 2, k + 3);
+      if (latB > latA) idx.push(k, k + 1, k + 2, k + 1, k + 3, k + 2);
+      else idx.push(k, k + 2, k + 1, k + 1, k + 2, k + 3);
     }
   }
   const g = new THREE.BufferGeometry();
@@ -37,15 +38,15 @@ function flatQuad(path: RoadPath, s: number, lat: number, len: number, wid: numb
   const corners = [path.toWorld(sa, lat - wid / 2), path.toWorld(sa, lat + wid / 2), path.toWorld(sb, lat - wid / 2), path.toWorld(sb, lat + wid / 2)];
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.Float32BufferAttribute(corners.flatMap((c) => [c.x, y, c.z]), 3));
-  g.setIndex([0, 2, 1, 1, 2, 3]);
+  g.setIndex([0, 1, 2, 1, 3, 2]);
   g.computeVertexNormals();
   return g;
 }
 
-function vertexColorMesh(items: ColoredGeometry[], name: string): THREE.Mesh | null {
+function vertexColorMesh(items: ColoredGeometry[], name: string, offset = false): THREE.Mesh | null {
   const geo = mergeColored(items);
   if (!geo) return null;
-  const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.9, flatShading: true }));
+  const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.9, flatShading: true, polygonOffset: offset, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }));
   m.name = name;
   return m;
 }
@@ -72,7 +73,7 @@ export function createRoadMeshForChunk(chunk: Chunk, path: RoadPath): THREE.Grou
   // Dashed centreline: 2 m dash every 4 m
   const dashes: ColoredGeometry[] = [];
   for (let d = 1; d + 1 <= ROAD.chunkLengthM; d += 4) dashes.push({ geometry: flatQuad(path, chunk.startS + d + 1, 0, 2, 0.15, 0.003), color: 0xffffff });
-  const dashMesh = vertexColorMesh(dashes, 'centreline');
+  const dashMesh = vertexColorMesh(dashes, 'centreline', true);
   if (dashMesh) group.add(dashMesh);
 
   // Darker asphalt patches
@@ -80,7 +81,7 @@ export function createRoadMeshForChunk(chunk: Chunk, path: RoadPath): THREE.Grou
   for (let i = 0; i < 3; i++) {
     patches.push({ geometry: flatQuad(path, chunk.startS + 3 + rand() * (ROAD.chunkLengthM - 6), (rand() - 0.5) * 5, 1 + rand() * 1.5, 1 + rand(), 0.002), color: 0x3b3d42 });
   }
-  const patchMesh = vertexColorMesh(patches, 'patches');
+  const patchMesh = vertexColorMesh(patches, 'patches', true);
   if (patchMesh) group.add(patchMesh);
 
   // Scenery: lamp posts (alternating sides) and grey blocks of flats

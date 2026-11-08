@@ -25,7 +25,7 @@ function irregularDisc(diameter: number, seed: number, y: number, color: number)
   g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
   g.setIndex(idx);
   g.computeVertexNormals();
-  const m = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ color, roughness: 1 }));
+  const m = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ color, roughness: 1, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }));
   m.position.y = y;
   return m;
 }
@@ -55,7 +55,7 @@ export function createHazardMeshes(chunk: Chunk, path: RoadPath): { group: THREE
       m.position.y = ht / 2;
       o.add(m);
     } else if (h.hazardId === 'gura-iadului') {
-      const hole = new THREE.Mesh(new THREE.CircleGeometry(0.55, 16).rotateX(-Math.PI / 2), mat(0x050505, 1));
+      const hole = new THREE.Mesh(new THREE.CircleGeometry(0.55, 16).rotateX(-Math.PI / 2), Object.assign(mat(0x050505, 1), { polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }));
       hole.position.y = 0.006;
       o.add(hole);
       const lid = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 0.05, 16), mat(0x6e737a, 0.5, 0.6));

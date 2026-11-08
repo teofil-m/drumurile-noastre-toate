@@ -39,7 +39,7 @@ export function createTrafficLayer(parent: THREE.Object3D): TrafficLayer {
     add(bodyGeo, m, 0, 0, 0);
     add(cabinGeo, m, 0, 0.5, 0.2);
     add(glassGeo, glassMat, 0, 0.52, 0.2);
-    for (const sx of [-0.8, 0.8]) for (const sz of [-1.3, 1.3]) add(wheelGeo, wheelMat, sx, -0.3, sz);
+    for (const sx of [-0.8, 0.8]) for (const sz of [-1.3, 1.3]) add(wheelGeo, wheelMat, sx, -0.17, sz);
     return g;
   };
 

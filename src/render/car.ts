@@ -96,7 +96,7 @@ export function createDacia(): Dacia {
     w.position.set(sx * WHEEL_X, -0.2, sz * WHEEL_Z);
     add(w, tyreGeo, rubber, 0, 0, 0);
     add(w, hubGeo, hub, 0, 0, 0);
-    add(w, box(0.3, 0.08, 0.08), dark, 0, 0, 0); // spoke mark so rotation is visible
+    for (const fx of [-0.15, 0.15]) add(w, box(0.03, 0.14, 0.07), dark, fx, 0.22, 0); // off-axle mark on both faces so spin is visible
     root.add(w);
     wheels.push(w);
   }

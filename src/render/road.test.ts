@@ -23,3 +23,34 @@ describe('createRoadMeshForChunk', () => {
     expect(has(-ROAD.halfWidthM, -10)).toBe(true);
   });
 });
+
+describe('road surfaces face upward', () => {
+  const straight: Chunk = { index: 0, startS: 0, curvature: 0, hazards: [], traffic: [] };
+  const curved: Chunk = { index: 1, startS: ROAD.chunkLengthM, curvature: 0.02, hazards: [], traffic: [] };
+  const path = new RoadPath();
+  path.addChunk(straight);
+  path.addChunk(curved);
+  const a = new THREE.Vector3();
+  const b = new THREE.Vector3();
+  const c = new THREE.Vector3();
+
+  for (const chunk of [straight, curved]) {
+    for (const name of ['road', 'grass', 'centreline', 'patches']) {
+      it(`chunk ${chunk.index} ${name}: every triangle normal has y > 0`, () => {
+        const mesh = createRoadMeshForChunk(chunk, path).getObjectByName(name) as THREE.Mesh;
+        const pos = mesh.geometry.getAttribute('position');
+        const idx = mesh.geometry.index;
+        const n = (idx ? idx.count : pos.count) / 3;
+        expect(n).toBeGreaterThan(0);
+        for (let t = 0; t < n; t++) {
+          const v = (k: number): number => (idx ? idx.getX(t * 3 + k) : t * 3 + k);
+          a.fromBufferAttribute(pos, v(0));
+          b.fromBufferAttribute(pos, v(1));
+          c.fromBufferAttribute(pos, v(2));
+          const normal = b.sub(a).cross(c.sub(a));
+          expect(normal.y).toBeGreaterThan(0);
+        }
+      });
+    }
+  }
+});
