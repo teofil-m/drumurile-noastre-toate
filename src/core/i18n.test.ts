@@ -4,7 +4,11 @@ import { achievementLabel, DICT, hazardLabel, LANG_KEY, loadLang, saveLang, t } 
 import type { AchievementId } from './achievements';
 
 const RO_EXPECTED = {
-  'menu.play': 'Joacă',
+  'menu.playShort': 'Joacă scurt (300 HP)',
+  'menu.playClassic': 'Joacă clasic (1000 HP)',
+  'mode.short': 'Scurt',
+  'mode.classic': 'Clasic',
+  'result.mode': 'Mod: {mode}',
   'menu.leaderboard': 'Clasament',
   'menu.achievements': 'Realizări',
   'menu.language': 'English',
@@ -42,7 +46,11 @@ const RO_EXPECTED = {
 };
 
 const EN_EXPECTED = {
-  'menu.play': 'Play',
+  'menu.playShort': 'Play short (300 HP)',
+  'menu.playClassic': 'Play classic (1000 HP)',
+  'mode.short': 'Short',
+  'mode.classic': 'Classic',
+  'result.mode': 'Mode: {mode}',
   'menu.leaderboard': 'Leaderboard',
   'menu.achievements': 'Achievements',
   'menu.language': 'Română',
@@ -94,8 +102,8 @@ describe('DICT', () => {
 
 describe('t', () => {
   it('returns the plain string for the language', () => {
-    expect(t('ro', 'menu.play')).toBe('Joacă');
-    expect(t('en', 'menu.play')).toBe('Play');
+    expect(t('ro', 'menu.playShort')).toBe('Joacă scurt (300 HP)');
+    expect(t('en', 'menu.playShort')).toBe('Play short (300 HP)');
   });
   it('substitutes params', () => {
     expect(t('en', 'result.time', { time: '3:12.40' })).toBe('Time: 3:12.40');

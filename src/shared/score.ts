@@ -3,14 +3,15 @@ import {
   MAX_POTHOLES,
   MAX_POTHOLES_PER_SECOND,
   MAX_TIME_MS,
-  MIN_WRECK_TIME_MS,
 } from './constants';
+import { MODE_CONFIG, isGameMode, type GameMode } from './modes';
 
 export interface ScoreSubmission {
   nickname: string;
   timeMs: number;
   potholes: number;
   clientVersion: string;
+  mode: GameMode;
 }
 
 export type ValidationError =
@@ -21,13 +22,14 @@ export type ValidationError =
   | 'time_too_fast'
   | 'potholes_invalid'
   | 'potholes_implausible'
-  | 'version_invalid';
+  | 'version_invalid'
+  | 'mode_invalid';
 
 export type ValidationResult =
   | { ok: true; value: ScoreSubmission }
   | { ok: false; error: ValidationError };
 
-const ALLOWED_FIELDS = ['nickname', 'timeMs', 'potholes', 'clientVersion'];
+const ALLOWED_FIELDS = ['nickname', 'timeMs', 'potholes', 'clientVersion', 'mode'];
 const NICKNAME_RE = /^[\p{L}\p{N} _-]{2,16}$/u;
 
 const fail = (error: ValidationError): ValidationResult => ({ ok: false, error });
@@ -38,13 +40,15 @@ export function validateSubmission(input: unknown): ValidationResult {
   if (Object.keys(obj).some((k) => !ALLOWED_FIELDS.includes(k))) return fail('unknown_field');
 
   const { nickname, timeMs, potholes, clientVersion } = obj;
+  const mode = 'mode' in obj ? obj.mode : 'classic';
+  if (!isGameMode(mode)) return fail('mode_invalid');
 
   if (typeof nickname !== 'string') return fail('nickname_invalid');
   const trimmed = nickname.trim().normalize('NFC');
   if (!NICKNAME_RE.test(trimmed)) return fail('nickname_invalid');
 
   if (typeof timeMs !== 'number' || !Number.isInteger(timeMs)) return fail('time_invalid');
-  if (timeMs < MIN_WRECK_TIME_MS) return fail('time_too_fast');
+  if (timeMs < MODE_CONFIG[mode].minWreckTimeS * 1000) return fail('time_too_fast');
   if (timeMs > MAX_TIME_MS) return fail('time_invalid');
 
   if (typeof potholes !== 'number' || !Number.isInteger(potholes) || potholes < 0 || potholes > MAX_POTHOLES) {
@@ -56,5 +60,5 @@ export function validateSubmission(input: unknown): ValidationResult {
     return fail('version_invalid');
   }
 
-  return { ok: true, value: { nickname: trimmed, timeMs, potholes, clientVersion } };
+  return { ok: true, value: { nickname: trimmed, timeMs, potholes, clientVersion, mode } };
 }

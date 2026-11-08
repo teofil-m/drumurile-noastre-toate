@@ -1,4 +1,5 @@
 import type { Part } from './damage';
+import type { GameMode } from '../shared/modes';
 import type { HazardId } from './hazards';
 
 export interface Controls {
@@ -18,6 +19,8 @@ export interface RunStats {
 }
 
 export interface RunState {
+  mode: GameMode;
+  maxHp: number;
   phase: RunPhase;
   timeS: number;
   health: number;
@@ -26,7 +29,7 @@ export interface RunState {
   stats: RunStats;
   hitInstanceIds: ReadonlySet<string>;
   lastHazard: HazardId | null;
-  clampAbsorbed: boolean; // true once the pre-180 s clamp ever saved the car
+  clampAbsorbed: boolean; // true once the pre-minimum-wreck-time clamp ever saved the car
 }
 
 export type RunEvent =

@@ -1,5 +1,5 @@
-import { MIN_WRECK_TIME_S } from '../shared/constants';
-import { PART_THRESHOLDS, SPEED_FACTOR, TIER_DAMAGE } from './config';
+import { MODE_CONFIG } from '../shared/modes';
+import { MAX_HP, PART_FRACTIONS, SPEED_FACTOR, TIER_DAMAGE } from './config';
 import type { Tier } from './hazards';
 
 export type Part = 'bumper' | 'hood' | 'doorLeft' | 'doorRight' | 'exhaust' | 'transmission';
@@ -18,15 +18,18 @@ export function hitDamage(tier: Tier, speedKmh: number): number {
   return Math.round(TIER_DAMAGE[tier] * speedFactor(speedKmh));
 }
 
-export function applyDamage(health: number, dmg: number, runTimeS: number): DamageResult {
+export function applyDamage(health: number, dmg: number, runTimeS: number, minWreckTimeS: number = MODE_CONFIG.classic.minWreckTimeS): DamageResult {
   if (!Number.isFinite(dmg) || dmg < 0) return { health, clampAbsorbed: false };
   const next = health - dmg;
-  if (runTimeS < MIN_WRECK_TIME_S && next < 1) {
+  if (runTimeS < minWreckTimeS && next < 1) {
     return { health: 1, clampAbsorbed: true };
   }
   return { health: Math.max(0, next), clampAbsorbed: false };
 }
 
-export function newlyDetached(prevTaken: number, nextTaken: number): Part[] {
-  return PART_THRESHOLDS.filter((t) => prevTaken < t.damageTaken && t.damageTaken <= nextTaken).map((t) => t.part);
+export function newlyDetached(prevTaken: number, nextTaken: number, maxHp: number = MAX_HP): Part[] {
+  return PART_FRACTIONS.filter((f) => {
+    const threshold = Math.round(f.fraction * maxHp);
+    return prevTaken < threshold && threshold <= nextTaken;
+  }).map((f) => f.part);
 }

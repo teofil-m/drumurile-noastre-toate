@@ -6,11 +6,12 @@ import { loadLang, saveLang, t } from './core/i18n';
 import type { Lang } from './core/i18n';
 import { scoreTimeMs } from './core/run';
 import type { RunEvent, RunOutput } from './core/run';
+import type { GameMode } from './shared/modes';
 import { createRng } from './core/rng';
 import { createSteering, effectiveSteer, stepSteering } from './core/steering';
 import type { SteeringState } from './core/steering';
 import { fixedSteps } from './game/loop';
-import { createSession, sessionEvent } from './game/session';
+import { createSession, sessionEvent, withMode } from './game/session';
 import type { Session } from './game/session';
 import { createRenderer } from './render/scene';
 import type { Renderer } from './render/scene';
@@ -49,6 +50,7 @@ let world: World | null = null;
 let accS = 0;
 let buildId = 0;
 let building: Promise<World | null> | null = null;
+let lastMode: GameMode = 'classic';
 let shakeTimer: ReturnType<typeof setTimeout> | undefined;
 
 const hud = createHud(ui);
@@ -67,9 +69,10 @@ const screens = createScreens({
     document.documentElement.lang = l;
   },
   unlocked: () => world?.session.unlocked ?? new Set(),
-  onPlay: () => void startRun(),
+  onPlay: (mode) => void startRun(mode),
+  lastMode: () => lastMode,
   onResume: () => resume(),
-  onRestart: () => void startRun(),
+  onRestart: () => void startRun(lastMode),
   onMenu: () => {
     hud.show(false);
     void buildWorld();
@@ -190,6 +193,7 @@ function finishIfOver(): void {
   if (run.phase !== 'wrecked' && run.phase !== 'dnf') return;
   hud.show(true);
   screens.showResult({
+    mode: run.mode,
     kind: run.phase,
     timeMs: scoreTimeMs(run),
     potholes: run.stats.potholes,
@@ -197,7 +201,8 @@ function finishIfOver(): void {
   });
 }
 
-async function startRun(): Promise<void> {
+async function startRun(mode: GameMode): Promise<void> {
+  lastMode = mode;
   screens.hide();
   hud.show(false);
   // Reuse the idle world (built at load / Menu) when there is one; otherwise (restart) build a fresh one.
@@ -206,6 +211,7 @@ async function startRun(): Promise<void> {
   else if (world && world.session.run.phase === 'menu') w = world;
   else w = await buildWorld();
   if (!w || world !== w || w.session.run.phase !== 'menu') return;
+  w.session = withMode(w.session, mode);
   apply({ type: 'start' });
   hud.show(true);
 }
@@ -230,7 +236,7 @@ const input = createInput((code) => {
     if (phase === 'driving') pause();
     else if (phase === 'paused') resume();
   } else if (code === 'KeyR') {
-    if (phase === 'driving' || phase === 'paused' || phase === 'wrecked' || phase === 'dnf') void startRun();
+    if (phase === 'driving' || phase === 'paused' || phase === 'wrecked' || phase === 'dnf') void startRun(lastMode);
   }
 });
 
@@ -276,6 +282,7 @@ function frame(now: number): void {
           timeS: w.session.run.timeS,
           speedKmh: w.snapshot.speedKmh,
           health: w.session.run.health,
+          maxHp: w.session.run.maxHp,
           lastHazard: w.session.run.lastHazard,
         },
         lang,

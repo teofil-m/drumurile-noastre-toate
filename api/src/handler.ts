@@ -46,7 +46,7 @@ async function postScore(request: Request, deps: HandlerDeps, cors: Record<strin
 async function getLeaderboard(url: URL, deps: HandlerDeps, cors: Record<string, string>) {
   const query = parseLeaderboardQuery(url.searchParams);
   if (!query.ok) return fail(query.error, cors);
-  const entries = await deps.store.top(query.board, query.limit);
+  const entries = await deps.store.top(query.mode, query.board, query.limit);
   return json(200, { entries }, cors);
 }
 

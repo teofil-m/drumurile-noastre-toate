@@ -6,12 +6,12 @@ const err = (x: unknown) => (validateSubmission(x) as { error: string }).error;
 
 describe('validateSubmission', () => {
   it('accepts a valid submission and trims nickname', () => {
-    expect(validateSubmission({ ...valid, nickname: '  Ștefan_1-a  ' })).toEqual({ ok: true, value: { ...valid, nickname: 'Ștefan_1-a' } });
+    expect(validateSubmission({ ...valid, nickname: '  Ștefan_1-a  ' })).toEqual({ ok: true, value: { ...valid, mode: 'classic', nickname: 'Ștefan_1-a' } });
   });
   it.each([null, 42, 'x', [], undefined])('rejects non-object %p', (x) => { expect(err(x)).toBe('not_object'); });
   it('normalizes a decomposed nickname to NFC', () => {
     const r = validateSubmission({ ...valid, nickname: 'ștefan' });
-    expect(r).toEqual({ ok: true, value: { ...valid, nickname: 'ștefan' } });
+    expect(r).toEqual({ ok: true, value: { ...valid, mode: 'classic', nickname: 'ștefan' } });
   });
   it('rejects a missing timeMs', () => { const { timeMs: _t, ...rest } = valid; expect(err(rest)).toBe('time_invalid'); });
   it('rejects missing potholes', () => { const { potholes: _p, ...rest } = valid; expect(err(rest)).toBe('potholes_invalid'); });
@@ -37,5 +37,21 @@ describe('validateSubmission', () => {
     expect(validateSubmission({ ...valid, timeMs: 3_600_000, potholes: 5000 }).ok).toBe(true);
     expect(validateSubmission({ ...valid, clientVersion: 'v' }).ok).toBe(true);
     expect(validateSubmission({ ...valid, clientVersion: 'x'.repeat(20) }).ok).toBe(true);
+  });
+});
+
+describe('validateSubmission modes', () => {
+  it('defaults a missing mode to classic and always returns mode', () => {
+    expect(validateSubmission(valid)).toEqual({ ok: true, value: { ...valid, mode: 'classic' } });
+  });
+  it('accepts explicit modes', () => {
+    expect(validateSubmission({ ...valid, mode: 'short' })).toEqual({ ok: true, value: { ...valid, mode: 'short' } });
+    expect(validateSubmission({ ...valid, mode: 'classic' })).toEqual({ ok: true, value: { ...valid, mode: 'classic' } });
+  });
+  it.each(['nope', '', null, 1, 'Short', {}])('rejects mode %p', (m) => { expect(err({ ...valid, mode: m })).toBe('mode_invalid'); });
+  it('uses the per-mode minimum wreck time', () => {
+    expect(err({ ...valid, mode: 'short', timeMs: 59_999 })).toBe('time_too_fast');
+    expect(validateSubmission({ ...valid, mode: 'short', timeMs: 60_000, potholes: 0 }).ok).toBe(true);
+    expect(err({ ...valid, mode: 'classic', timeMs: 60_000 })).toBe('time_too_fast');
   });
 });

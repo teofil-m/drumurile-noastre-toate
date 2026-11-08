@@ -1,4 +1,3 @@
-import { MAX_HP } from '../core/config';
 import type { HazardId, Tier } from '../core/hazards';
 import { hazardLabel, t } from '../core/i18n';
 import type { Lang } from '../core/i18n';
@@ -8,6 +7,7 @@ export interface HudData {
   timeS: number;
   speedKmh: number;
   health: number;
+  maxHp: number;
   lastHazard: HazardId | null;
 }
 
@@ -44,9 +44,9 @@ export function createHud(parent: HTMLElement): Hud {
     update(d, lang) {
       time.textContent = `${t(lang, 'hud.time')} ${formatTime(d.timeS * 1000)}`;
       label.textContent = t(lang, 'hud.health');
-      const frac = Math.max(0, Math.min(1, d.health / MAX_HP));
+      const frac = Math.max(0, Math.min(1, d.health / d.maxHp));
       fill.style.width = `${(frac * 100).toFixed(1)}%`;
-      hpText.textContent = `${Math.max(0, Math.round(d.health))} / ${MAX_HP} HP`;
+      hpText.textContent = `${Math.max(0, Math.round(d.health))} / ${d.maxHp} HP`;
       health.classList.toggle('low', frac < 0.25);
       speed.textContent = `${Math.round(Math.max(0, d.speedKmh))} ${t(lang, 'hud.speed')}`;
       if (d.lastHazard) {

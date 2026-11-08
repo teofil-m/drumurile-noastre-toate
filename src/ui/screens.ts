@@ -5,11 +5,13 @@ import type { Lang, MessageKey } from '../core/i18n';
 import type { KeyValueStore } from '../core/ports';
 import type { ApiClient } from '../adapters/apiClient';
 import { formatTime } from '../game/format';
+import type { GameMode } from '../shared/modes';
 import { validateSubmission } from '../shared/score';
 
 export const NICKNAME_KEY = 'dn.nickname';
 
 export interface RunResult {
+  mode: GameMode;
   kind: 'wrecked' | 'dnf';
   timeMs: number;
   potholes: number;
@@ -24,7 +26,9 @@ export interface ScreenDeps {
   getLang(): Lang;
   setLang(lang: Lang): void;
   unlocked(): ReadonlySet<AchievementId>;
-  onPlay(): void;
+  onPlay(mode: GameMode): void;
+  /** The mode last played this session (default board in the leaderboard); classic when none. */
+  lastMode(): GameMode;
   onResume(): void;
   onRestart(): void;
   /** Called when the player leaves a run for the main menu (discard the run, rebuild an idle world). */
@@ -102,17 +106,36 @@ export function createScreens(deps: ScreenDeps): Screens {
       );
       panel(
         tr('menu.title'),
-        button(tr('menu.play'), deps.onPlay, 'primary'),
+        button(tr('menu.playShort'), () => deps.onPlay('short'), 'primary'),
+        button(tr('menu.playClassic'), () => deps.onPlay('classic'), 'primary'),
         button(tr('menu.leaderboard'), () => leaderboard(menu)),
         button(tr('menu.achievements'), () => achievements(menu)),
         langBtn,
       );
     });
 
-  const leaderboard = (back: () => void, initial: 'fastest' | 'potholes' = 'fastest'): void => {
+  const leaderboard = (
+    back: () => void,
+    initial: 'fastest' | 'potholes' = 'fastest',
+    initialMode: GameMode = deps.lastMode(),
+  ): void => {
     let board = initial;
+    let mode = initialMode;
     mount(() => {
       const mine = token;
+      const modeTabs = el('div', 'tabs');
+      for (const m of ['short', 'classic'] as const) {
+        modeTabs.appendChild(
+          button(
+            tr(m === 'short' ? 'mode.short' : 'mode.classic'),
+            () => {
+              mode = m;
+              render?.();
+            },
+            m === mode ? 'tab active' : 'tab',
+          ),
+        );
+      }
       const tabs = el('div', 'tabs');
       const list = el('div', 'lb');
       for (const b of ['fastest', 'potholes'] as const) {
@@ -128,8 +151,8 @@ export function createScreens(deps: ScreenDeps): Screens {
         );
       }
       list.textContent = tr('nav.loading');
-      panel(tr('menu.leaderboard'), tabs, list, button(tr('nav.back'), back, 'small'));
-      void deps.api.leaderboard(board, 20).then((res) => {
+      panel(tr('menu.leaderboard'), modeTabs, tabs, list, button(tr('nav.back'), back, 'small'));
+      void deps.api.leaderboard(board, 20, mode).then((res) => {
         if (mine !== token) return; // screen changed meanwhile
         list.replaceChildren();
         if (!res.ok) {
@@ -181,6 +204,7 @@ export function createScreens(deps: ScreenDeps): Screens {
     const back = (): void => result(r);
     mount(() => {
       const kids: HTMLElement[] = [];
+      kids.push(el('p', 'stat', tr('result.mode', { mode: tr(r.mode === 'short' ? 'mode.short' : 'mode.classic') })));
       if (r.kind === 'wrecked') {
         kids.push(el('p', 'stat', tr('result.time', { time: formatTime(r.timeMs) })));
         kids.push(el('p', 'stat', tr('result.potholes', { count: r.potholes })));
@@ -209,6 +233,7 @@ export function createScreens(deps: ScreenDeps): Screens {
               nickname: input.value,
               timeMs: r.timeMs,
               potholes: r.potholes,
+              mode: r.mode,
               clientVersion: deps.clientVersion,
             });
             if (!v.ok) {
@@ -253,7 +278,7 @@ export function createScreens(deps: ScreenDeps): Screens {
       const row = el('div', 'row');
       row.append(
         button(tr('result.restart'), deps.onRestart, 'primary'),
-        button(tr('result.leaderboard'), () => leaderboard(back, 'fastest')),
+        button(tr('result.leaderboard'), () => leaderboard(back, 'fastest', r.mode)),
         button(tr('result.menu'), toMenu),
       );
       kids.push(row);

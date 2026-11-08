@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { memoryStore } from '../core/ports';
-import { createSession, sessionEvent } from './session';
+import { createSession, sessionEvent, withMode } from './session';
 
 const hit = (id: string) => ({ type: 'hazardHit' as const, hazardId: 'gropality' as const, instanceId: id, speedKmh: 50 });
 
@@ -11,6 +11,18 @@ describe('session', () => {
     expect(s.seed).toBe(42);
     expect(s.run.phase).toBe('menu');
     expect(s.unlocked.has('bordurist')).toBe(true);
+  });
+  it('creates a session in the requested mode and can switch an idle session', () => {
+    const store = memoryStore();
+    const s = createSession(3, store, 'short');
+    expect(s.run.mode).toBe('short');
+    expect(s.run.maxHp).toBe(300);
+    const c = withMode(s, 'classic');
+    expect(c.run.mode).toBe('classic');
+    expect(c.run.health).toBe(1000);
+    expect(c.seed).toBe(3);
+    expect(c.unlocked).toBe(s.unlocked);
+    expect(withMode(c, 'classic')).toBe(c);
   });
   it('returns a new achievement once and persists it', () => {
     const store = memoryStore();

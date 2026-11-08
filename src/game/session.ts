@@ -1,6 +1,7 @@
 import { evaluateAchievements, loadUnlocked, saveUnlocked } from '../core/achievements';
 import type { AchievementId } from '../core/achievements';
 import type { KeyValueStore } from '../core/ports';
+import type { GameMode } from '../shared/modes';
 import { applyEvent, createRun } from '../core/run';
 import type { RunEvent, RunOutput, RunState } from '../core/run';
 
@@ -10,8 +11,13 @@ export interface Session {
   seed: number;
 }
 
-export function createSession(seed: number, store: KeyValueStore): Session {
-  return { run: createRun(), unlocked: loadUnlocked(store), seed };
+export function createSession(seed: number, store: KeyValueStore, mode: GameMode = 'classic'): Session {
+  return { run: createRun(mode), unlocked: loadUnlocked(store), seed };
+}
+
+/** Re-targets an idle (menu-phase) session to another mode; returns the same session when already in that mode. */
+export function withMode(s: Session, mode: GameMode): Session {
+  return s.run.mode === mode ? s : { ...s, run: createRun(mode) };
 }
 
 export function sessionEvent(

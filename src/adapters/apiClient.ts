@@ -1,3 +1,4 @@
+import type { GameMode } from '../shared/modes';
 import type { ScoreSubmission } from '../shared/score';
 
 export type ApiFailure = { ok: false; error: string };
@@ -14,6 +15,7 @@ export interface ApiClient {
   leaderboard(
     board: 'fastest' | 'potholes',
     limit?: number,
+    mode?: GameMode,
   ): Promise<{ ok: true; entries: LeaderboardEntry[] } | ApiFailure>;
 }
 
@@ -51,8 +53,9 @@ export function createApiClient(baseUrl: string, fetchImpl?: typeof fetch): ApiC
       if (!p.ok) return failure(p);
       return typeof p.body.id === 'number' ? { ok: true, id: p.body.id } : OFFLINE;
     },
-    async leaderboard(board, limit = 20) {
-      const p = await call(f, `${base}/leaderboard?board=${board}&limit=${limit}`);
+    async leaderboard(board, limit = 20, mode) {
+      const modeParam = mode ? `&mode=${mode}` : '';
+      const p = await call(f, `${base}/leaderboard?board=${board}&limit=${limit}${modeParam}`);
       if (!p) return OFFLINE;
       if (!p.ok) return failure(p);
       return Array.isArray(p.body.entries)

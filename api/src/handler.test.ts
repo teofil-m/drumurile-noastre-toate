@@ -38,6 +38,37 @@ describe('POST /scores', () => {
     expect(store.scores[0]?.ipHash).not.toBe('1.2.3.4');
   });
 
+  it('accepts a short submission at exactly 60 s and stores its mode', async () => {
+    const store = createMemoryStore();
+    const res = await handle(post({ ...valid, mode: 'short', timeMs: 60000, potholes: 0 }), setup(store).deps);
+    expect(res.status).toBe(201);
+    expect(store.scores[0]?.mode).toBe('short');
+  });
+
+  it('rejects a short submission under 60 s', async () => {
+    const res = await handle(post({ ...valid, mode: 'short', timeMs: 59999 }), setup().deps);
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({ error: 'time_too_fast' });
+  });
+
+  it('rejects classic at 60 s', async () => {
+    const res = await handle(post({ ...valid, mode: 'classic', timeMs: 60000 }), setup().deps);
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({ error: 'time_too_fast' });
+  });
+
+  it('stores a missing mode as classic', async () => {
+    const store = createMemoryStore();
+    await handle(post(valid), setup(store).deps);
+    expect(store.scores[0]?.mode).toBe('classic');
+  });
+
+  it('rejects an invalid mode', async () => {
+    const res = await handle(post({ ...valid, mode: 'nope' }), setup().deps);
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({ error: 'mode_invalid' });
+  });
+
   it('rejects too-fast time', async () => {
     const res = await handle(post({ ...valid, timeMs: 179999 }), setup().deps);
     expect(res.status).toBe(400);
@@ -89,8 +120,10 @@ describe('GET /leaderboard', () => {
       ['B', 200000, 5],
       ['C', 300000, 9],
     ] as const;
+    await store.insertScore({ nickname: 'S1', timeMs: 70000, potholes: 2, clientVersion: '1', ipHash: 'h', mode: 'short' });
+    await store.insertScore({ nickname: 'S2', timeMs: 65000, potholes: 7, clientVersion: '1', ipHash: 'h', mode: 'short' });
     for (const [nickname, timeMs, potholes] of rows) {
-      await store.insertScore({ nickname, timeMs, potholes, clientVersion: '1', ipHash: 'h' });
+      await store.insertScore({ nickname, timeMs, potholes, clientVersion: '1', ipHash: 'h', mode: 'classic' });
     }
     return deps;
   }
@@ -114,6 +147,22 @@ describe('GET /leaderboard', () => {
     const res = await handle(get('board=potholes&limit=2'), await seeded());
     const body = (await res.json()) as { entries: { potholes: number }[] };
     expect(body.entries.map((e) => e.potholes)).toEqual([9, 5]);
+  });
+
+  it('defaults to classic and filters by mode', async () => {
+    const d = await seeded();
+    const classic = (await (await handle(get('board=fastest'), d)).json()) as { entries: { nickname: string }[] };
+    expect(classic.entries.map((e) => e.nickname)).toEqual(['B', 'A', 'C']);
+    const short = (await (await handle(get('board=fastest&mode=short'), d)).json()) as { entries: { nickname: string }[] };
+    expect(short.entries.map((e) => e.nickname)).toEqual(['S2', 'S1']);
+    const shortP = (await (await handle(get('board=potholes&mode=short'), d)).json()) as { entries: { nickname: string }[] };
+    expect(shortP.entries.map((e) => e.nickname)).toEqual(['S2', 'S1']);
+  });
+
+  it('rejects unknown mode', async () => {
+    const res = await handle(get('board=fastest&mode=nope'), await seeded());
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({ error: 'invalid_mode' });
   });
 
   it('rejects unknown board', async () => {

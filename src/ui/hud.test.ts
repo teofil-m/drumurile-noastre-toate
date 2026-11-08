@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import { createHud } from './hud';
 
-const base = { timeS: 192.4, speedKmh: 87.2, health: 800, lastHazard: 'gropality' as const };
+const base = { timeS: 192.4, speedKmh: 87.2, health: 800, maxHp: 1000, lastHazard: 'gropality' as const };
 
 describe('hud', () => {
   it('renders time, speed, hazard name and EN subtitle', () => {
@@ -26,6 +26,17 @@ describe('hud', () => {
     const hud = createHud(document.body);
     hud.update({ ...base, health: 742 }, 'en');
     expect(hud.el.textContent).toContain('742 / 1000 HP');
+  });
+  it('scales the bar and low-health mark by maxHp', () => {
+    const hud = createHud(document.body);
+    hud.update({ ...base, health: 100, maxHp: 300 }, 'en');
+    expect(hud.el.textContent).toContain('100 / 300 HP');
+    expect((hud.el.querySelector('.fill') as HTMLElement).style.width).toBe('33.3%');
+    expect(hud.el.querySelector('.hud-health')?.classList.contains('low')).toBe(false);
+    hud.update({ ...base, health: 74, maxHp: 300 }, 'en');
+    expect(hud.el.querySelector('.hud-health')?.classList.contains('low')).toBe(true);
+    hud.update({ ...base, health: 75, maxHp: 300 }, 'en');
+    expect(hud.el.querySelector('.hud-health')?.classList.contains('low')).toBe(false);
   });
   it('adds a damage pop-up', () => {
     const hud = createHud(document.body);

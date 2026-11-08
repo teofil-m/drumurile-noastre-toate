@@ -21,19 +21,19 @@ export function createD1Store(db: D1Database): ScoreStore {
     async insertScore(score) {
       const row = await db
         .prepare(
-          'INSERT INTO scores (nickname, time_ms, potholes, client_version, ip_hash) VALUES (?1, ?2, ?3, ?4, ?5) RETURNING id',
+          'INSERT INTO scores (nickname, time_ms, potholes, client_version, ip_hash, mode) VALUES (?1, ?2, ?3, ?4, ?5, ?6) RETURNING id',
         )
-        .bind(score.nickname, score.timeMs, score.potholes, score.clientVersion, score.ipHash)
+        .bind(score.nickname, score.timeMs, score.potholes, score.clientVersion, score.ipHash, score.mode)
         .first<{ id: number }>();
       if (!row) throw new Error('insert returned no row');
       return row.id;
     },
-    async top(board, limit) {
+    async top(mode, board, limit) {
       const { results } = await db
         .prepare(
-          `SELECT nickname, time_ms AS timeMs, potholes, created_at AS createdAt FROM scores ORDER BY ${ORDER[board]} LIMIT ?1`,
+          `SELECT nickname, time_ms AS timeMs, potholes, created_at AS createdAt FROM scores WHERE mode = ?1 ORDER BY ${ORDER[board]} LIMIT ?2`,
         )
-        .bind(limit)
+        .bind(mode, limit)
         .all<LeaderboardEntry>();
       return results;
     },

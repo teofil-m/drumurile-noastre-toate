@@ -8,7 +8,11 @@ export type Lang = 'ro' | 'en';
 export const LANG_KEY = 'dn.lang';
 
 const RO = {
-  'menu.play': 'Joacă',
+  'menu.playShort': 'Joacă scurt (300 HP)',
+  'menu.playClassic': 'Joacă clasic (1000 HP)',
+  'mode.short': 'Scurt',
+  'mode.classic': 'Clasic',
+  'result.mode': 'Mod: {mode}',
   'menu.leaderboard': 'Clasament',
   'menu.achievements': 'Realizări',
   'menu.language': 'English',
@@ -48,7 +52,11 @@ const RO = {
 export type MessageKey = keyof typeof RO;
 
 const EN: Record<MessageKey, string> = {
-  'menu.play': 'Play',
+  'menu.playShort': 'Play short (300 HP)',
+  'menu.playClassic': 'Play classic (1000 HP)',
+  'mode.short': 'Short',
+  'mode.classic': 'Classic',
+  'result.mode': 'Mode: {mode}',
   'menu.leaderboard': 'Leaderboard',
   'menu.achievements': 'Achievements',
   'menu.language': 'Română',

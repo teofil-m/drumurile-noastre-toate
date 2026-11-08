@@ -78,3 +78,13 @@ describe('greedy bot balance guard', () => {
     expect(simulateGreedyBot(1, T).wreckTimeS).toBe(T);
   });
 });
+
+describe('short mode bot', () => {
+  it('never wrecks before 60 s across seeds 1..20 and wrecks within 600 s', () => {
+    for (let seed = 1; seed <= 20; seed++) {
+      const r = simulateGreedyBot(seed, 600, { mode: 'short' });
+      expect(r.wreckTimeS).not.toBeNull();
+      expect(r.wreckTimeS!).toBeGreaterThanOrEqual(60);
+    }
+  });
+});

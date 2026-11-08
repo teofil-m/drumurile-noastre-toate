@@ -1,3 +1,4 @@
+import type { GameMode } from '../../src/shared/modes';
 import type { Board } from './logic/leaderboard';
 
 export interface StoredScore {
@@ -6,6 +7,7 @@ export interface StoredScore {
   potholes: number;
   clientVersion: string;
   ipHash: string;
+  mode: GameMode;
 }
 export interface LeaderboardEntry {
   nickname: string;
@@ -16,5 +18,5 @@ export interface LeaderboardEntry {
 export interface ScoreStore {
   incrementRateLimit(ipHash: string, windowStart: number): Promise<number>;
   insertScore(score: StoredScore): Promise<number>;
-  top(board: Board, limit: number): Promise<LeaderboardEntry[]>;
+  top(mode: GameMode, board: Board, limit: number): Promise<LeaderboardEntry[]>;
 }

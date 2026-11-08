@@ -1,3 +1,4 @@
+import type { GameMode } from '../../src/shared/modes';
 import type { Board } from './logic/leaderboard';
 import type { LeaderboardEntry, ScoreStore, StoredScore } from './store';
 
@@ -19,8 +20,8 @@ export function createMemoryStore(): ScoreStore & { scores: MemoryScore[] } {
       scores.push({ ...score, id, createdAt: new Date(0).toISOString() });
       return id;
     },
-    async top(board: Board, limit: number): Promise<LeaderboardEntry[]> {
-      const sorted = [...scores].sort((a, b) =>
+    async top(mode: GameMode, board: Board, limit: number): Promise<LeaderboardEntry[]> {
+      const sorted = scores.filter((s) => s.mode === mode).sort((a, b) =>
         board === 'fastest'
           ? a.timeMs - b.timeMs || a.id - b.id
           : b.potholes - a.potholes || a.timeMs - b.timeMs || a.id - b.id,

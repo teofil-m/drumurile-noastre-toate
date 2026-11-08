@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createApiClient } from './apiClient';
 
-const sub = { nickname: 'abc', timeMs: 200000, potholes: 3, clientVersion: '1' };
+const sub = { nickname: 'abc', timeMs: 200000, potholes: 3, clientVersion: '1', mode: 'classic' as const };
 const json = (status: number, body: unknown) => new Response(JSON.stringify(body), { status });
 
 function stub(res: () => Response | Promise<Response>) {
@@ -56,6 +56,11 @@ describe('apiClient.leaderboard', () => {
     const r = await createApiClient('https://x.dev/', f).leaderboard('fastest');
     expect(r).toEqual({ ok: true, entries });
     expect(calls[0]!.url).toBe('https://x.dev/leaderboard?board=fastest&limit=20');
+  });
+  it('adds the mode param when given', async () => {
+    const { f, calls } = stub(() => json(200, { entries: [] }));
+    await createApiClient('https://x.dev', f).leaderboard('fastest', 20, 'short');
+    expect(calls[0]!.url).toBe('https://x.dev/leaderboard?board=fastest&limit=20&mode=short');
     expect(calls[0]!.init?.method ?? 'GET').toBe('GET');
   });
   it('custom limit', async () => {

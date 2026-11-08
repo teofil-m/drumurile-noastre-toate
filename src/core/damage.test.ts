@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { applyDamage, hitDamage, newlyDetached, speedFactor } from './damage';
-import { PART_THRESHOLDS, SPEED_FACTOR, TIER_DAMAGE } from './config';
+import { PART_FRACTIONS, PART_THRESHOLDS, SPEED_FACTOR, TIER_DAMAGE } from './config';
 
 describe('damage', () => {
   it.each([[110, 1], [0, 0.1], [5, 0.1], [55, 0.5], [82.5, 0.75], [200, 1], [NaN, 0.1], [-30, 0.1], [Infinity, 1]])('speedFactor(%p) = %p', (s, f) => {
@@ -36,5 +36,27 @@ describe('damage', () => {
       { part: 'bumper', damageTaken: 200 }, { part: 'hood', damageTaken: 400 }, { part: 'doorLeft', damageTaken: 550 },
       { part: 'doorRight', damageTaken: 700 }, { part: 'exhaust', damageTaken: 850 }, { part: 'transmission', damageTaken: 950 },
     ]);
+  });
+  it('pins the part fractions and keeps classic thresholds equal to fractions x 1000', () => {
+    expect(PART_FRACTIONS).toEqual([
+      { part: 'bumper', fraction: 0.2 }, { part: 'hood', fraction: 0.4 }, { part: 'doorLeft', fraction: 0.55 },
+      { part: 'doorRight', fraction: 0.7 }, { part: 'exhaust', fraction: 0.85 }, { part: 'transmission', fraction: 0.95 },
+    ]);
+    expect(PART_FRACTIONS.map((f) => ({ part: f.part, damageTaken: Math.round(f.fraction * 1000) }))).toEqual(PART_THRESHOLDS);
+  });
+  it('scales part detachment with maxHp (300 HP)', () => {
+    expect(newlyDetached(0, 59, 300)).toEqual([]);
+    expect(newlyDetached(59, 60, 300)).toEqual(['bumper']);
+    expect(newlyDetached(0, 120, 300)).toEqual(['bumper', 'hood']);
+    expect(newlyDetached(164, 165, 300)).toEqual(['doorLeft']);
+    expect(newlyDetached(209, 210, 300)).toEqual(['doorRight']);
+    expect(newlyDetached(254, 255, 300)).toEqual(['exhaust']);
+    expect(newlyDetached(284, 285, 300)).toEqual(['transmission']);
+    expect(newlyDetached(0, 300, 300)).toEqual(['bumper', 'hood', 'doorLeft', 'doorRight', 'exhaust', 'transmission']);
+  });
+  it('uses a per-mode minimum wreck time floor', () => {
+    expect(applyDamage(10, 50, 59.99, 60)).toEqual({ health: 1, clampAbsorbed: true });
+    expect(applyDamage(10, 50, 60, 60)).toEqual({ health: 0, clampAbsorbed: false });
+    expect(applyDamage(10, 50, 100)).toEqual({ health: 1, clampAbsorbed: true });
   });
 });

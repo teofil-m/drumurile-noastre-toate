@@ -28,6 +28,7 @@ const deepFreeze = <T>(o: T): T => {
   }
   return o;
 };
+const drive2 = (mode: 'classic' | 'short'): RunState => applyEvent(createRun(mode), { type: 'start' }).state;
 const wreck = (): RunState => {
   let s = advance(drive(), 180);
   for (let i = 0; i < 9; i++) s = hit(s, 'craterul-national', `x${i}`).state; // 9 x 120 > 1000
@@ -346,3 +347,47 @@ describe('run state machine', () => {
 });
 
 type RunOutputs = ReturnType<typeof hit>['outputs'];
+
+describe('run modes', () => {
+  it('createRun defaults to classic', () => {
+    const s = createRun();
+    expect(s.mode).toBe('classic');
+    expect(s.maxHp).toBe(1000);
+  });
+  it('createRun(short) starts with 300 HP', () => {
+    const s = createRun('short');
+    expect(s.mode).toBe('short');
+    expect(s.maxHp).toBe(300);
+    expect(s.health).toBe(300);
+  });
+  it('restart keeps the mode', () => {
+    const s = applyEvent(applyEvent(createRun('short'), { type: 'start' }).state, { type: 'restart' }).state;
+    expect(s.mode).toBe('short');
+    expect(s.maxHp).toBe(300);
+    expect(s.health).toBe(300);
+    expect(s.phase).toBe('driving');
+  });
+  it('short: clamp holds until 60 s, then wreck is possible and parts scale', () => {
+    let s = drive2('short');
+    s = advance(s, 10);
+    for (let i = 0; i < 4; i++) s = hit(s, 'craterul-national', `a${i}`).state; // 480 > 300, clamped
+    expect(s.health).toBe(1);
+    expect(s.phase).toBe('driving');
+    expect(s.clampAbsorbed).toBe(true);
+    expect(s.damageTaken).toBe(299);
+    expect(s.detached).toEqual(['bumper', 'hood', 'doorLeft', 'doorRight', 'exhaust', 'transmission']);
+    const w = hit(advance(s, 60), 'gropita', 'late');
+    expect(w.state.phase).toBe('wrecked');
+  });
+  it('short: first 120 damage detaches the bumper at 60 damage', () => {
+    const r = hit(drive2('short'), 'craterul-national', 'c1');
+    expect(r.state.damageTaken).toBe(120);
+    expect(r.state.detached).toEqual(['bumper', 'hood']);
+  });
+  it('classic: clamp still applies until 180 s', () => {
+    let s = advance(drive(), 100);
+    for (let i = 0; i < 9; i++) s = hit(s, 'craterul-national', `x${i}`).state;
+    expect(s.phase).toBe('driving');
+    expect(s.health).toBe(1);
+  });
+});

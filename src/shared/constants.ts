@@ -1,4 +1,6 @@
-export const MIN_WRECK_TIME_S = 180;
+import { MODE_CONFIG } from './modes';
+
+export const MIN_WRECK_TIME_S = MODE_CONFIG.classic.minWreckTimeS;
 export const MIN_WRECK_TIME_MS = MIN_WRECK_TIME_S * 1000;
 export const MAX_TIME_MS = 3_600_000;
 export const MAX_POTHOLES = 5000;

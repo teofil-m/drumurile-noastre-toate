@@ -29,3 +29,11 @@ export const PART_THRESHOLDS: ReadonlyArray<{ part: Part; damageTaken: number }>
   { part: 'exhaust', damageTaken: 850 },
   { part: 'transmission', damageTaken: 950 },
 ];
+export const PART_FRACTIONS: ReadonlyArray<{ part: Part; fraction: number }> = [
+  { part: 'bumper', fraction: 0.2 },
+  { part: 'hood', fraction: 0.4 },
+  { part: 'doorLeft', fraction: 0.55 },
+  { part: 'doorRight', fraction: 0.7 },
+  { part: 'exhaust', fraction: 0.85 },
+  { part: 'transmission', fraction: 0.95 },
+];

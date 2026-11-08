@@ -1,3 +1,4 @@
+import type { GameMode } from '../shared/modes';
 import { ROAD, TOP_SPEED_KMH } from './config';
 import { generateChunk, type Chunk, type HazardSpawn } from './roadgen';
 import { applyEvent, createRun } from './run';
@@ -9,12 +10,12 @@ export const BOT = { lateralSpeedMps: 2.5, hitToleranceM: 0.9, dtS: 1 / 60 };
 const TARGET_EDGE_INSET_M = 0.5;
 const LOOK_AHEAD_CHUNKS = 1;
 
-export interface BotOptions { lateralSpeedMps?: number; hitToleranceM?: number }
+export interface BotOptions { lateralSpeedMps?: number; hitToleranceM?: number; mode?: GameMode }
 
 export function simulateGreedyBot(seed: number, maxTimeS = 600, opts: BotOptions = {}): BotResult {
   const lateralSpeedMps = opts.lateralSpeedMps ?? BOT.lateralSpeedMps;
   const hitToleranceM = opts.hitToleranceM ?? BOT.hitToleranceM;
-  let state = applyEvent(createRun(), { type: 'start' }).state;
+  let state = applyEvent(createRun(opts.mode), { type: 'start' }).state;
   const chunks = new Map<number, Chunk>();
   const chunkAt = (index: number): Chunk => {
     let chunk = chunks.get(index);

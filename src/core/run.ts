@@ -1,15 +1,19 @@
-import { FARA_MAINI, MAX_HP, MAX_TICK_S } from './config';
+import { MODE_CONFIG, type GameMode } from '../shared/modes';
+import { FARA_MAINI, MAX_TICK_S } from './config';
 import { applyDamage, hitDamage, newlyDetached } from './damage';
 import { getHazard } from './hazards';
 import type { RunEvent, RunOutput, RunState } from './types';
 
 export type { RunEvent, RunOutput, RunPhase, RunState, RunStats } from './types';
 
-export function createRun(): RunState {
+export function createRun(mode: GameMode = 'classic'): RunState {
+  const { maxHp } = MODE_CONFIG[mode];
   return {
+    mode,
+    maxHp,
     phase: 'menu',
     timeS: 0,
-    health: MAX_HP,
+    health: maxHp,
     damageTaken: 0,
     detached: [],
     stats: { potholes: 0, hits: 0, hazardTypesHit: [], potholeStreakNoSteer: 0 },
@@ -49,9 +53,9 @@ function applyHazardHit(state: RunState, event: Extract<RunEvent, { type: 'hazar
   if (state.hitInstanceIds.has(event.instanceId)) return noop(state);
   const hazard = getHazard(event.hazardId);
   const damage = hitDamage(hazard.tier, event.speedKmh);
-  const dmg = applyDamage(state.health, damage, state.timeS);
-  const damageTaken = MAX_HP - dmg.health;
-  const parts = newlyDetached(state.damageTaken, damageTaken);
+  const dmg = applyDamage(state.health, damage, state.timeS, MODE_CONFIG[state.mode].minWreckTimeS);
+  const damageTaken = state.maxHp - dmg.health;
+  const parts = newlyDetached(state.damageTaken, damageTaken, state.maxHp);
   const isPothole = hazard.kind === 'pothole';
   const next: RunState = {
     ...state,
@@ -86,7 +90,7 @@ export function applyEvent(state: RunState, event: RunEvent): ApplyResult {
     case 'resume':
       return state.phase === 'paused' ? { state: { ...state, phase: 'driving' }, outputs: [] } : noop(state);
     case 'restart':
-      return state.phase === 'menu' ? noop(state) : { state: { ...createRun(), phase: 'driving' }, outputs: [] };
+      return state.phase === 'menu' ? noop(state) : { state: { ...createRun(state.mode), phase: 'driving' }, outputs: [] };
     case 'trafficCollision':
       return state.phase === 'driving' ? { state: { ...state, phase: 'dnf' }, outputs: [{ type: 'dnf' }] } : noop(state);
     case 'tick':

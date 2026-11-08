@@ -8,6 +8,7 @@ export type ApiErrorCode =
   | 'payload_too_large'
   | 'invalid_json'
   | 'invalid_board'
+  | 'invalid_mode'
   | 'invalid_limit'
   | 'rate_limited'
   | 'internal';
