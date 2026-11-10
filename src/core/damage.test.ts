@@ -1,14 +1,19 @@
 import { describe, it, expect } from 'vitest';
-import { applyDamage, hitDamage, newlyDetached, speedFactor } from './damage';
-import { PART_FRACTIONS, PART_THRESHOLDS, SPEED_FACTOR, TIER_DAMAGE } from './config';
+import { applyDamage, hitDamage, newlyDetached, speedTerm } from './damage';
+import { DAMAGE_COEF, PART_FRACTIONS, PART_THRESHOLDS, ROLL_DAMAGE, SPEED_FACTOR, TIER_DAMAGE } from './config';
 
 describe('damage', () => {
-  it.each([[110, 1], [0, 0.1], [5, 0.1], [55, 0.5], [82.5, 0.75], [200, 1], [NaN, 0.1], [-30, 0.1], [Infinity, 1]])('speedFactor(%p) = %p', (s, f) => {
-    expect(speedFactor(s)).toBeCloseTo(f, 10);
+  it.each([[110, 1], [0, 0.1 ** 1.5], [5, 0.1 ** 1.5], [55, 0.5 ** 1.5], [82.5, 0.75 ** 1.5], [200, 1], [NaN, 0.1 ** 1.5], [-30, 0.1 ** 1.5], [Infinity, 1]])('speedTerm(%p) = %p', (s, f) => {
+    expect(speedTerm(s)).toBeCloseTo(f, 10);
   });
-  it.each([['large', 110, 50], ['small', 110, 10], ['epic', 110, 120], ['medium', 110, 25], ['small', 0, 1], ['epic', 55, 60], ['medium', 82.5, 19], ['small', NaN, 1]] as const)('hitDamage(%s,%p) = %p', (t, s, d) => {
-    expect(hitDamage(t, s)).toBe(d);
+  it.each([['large', 110], ['small', 110], ['epic', 110], ['medium', 110], ['small', 0], ['epic', 55], ['medium', 82.5], ['small', NaN]] as const)('hitDamage(%s,%p) = round(tier*coef*term)', (t, s) => {
+    expect(hitDamage(t, s)).toBe(Math.round(TIER_DAMAGE[t] * DAMAGE_COEF * speedTerm(s)));
   });
+  it('pins DAMAGE_COEF and top-speed tier damage', () => {
+    expect(DAMAGE_COEF).toBe(1.25);
+    expect(['small', 'medium', 'large', 'epic'].map((x) => hitDamage(x as 'small', 110))).toEqual([13, 31, 63, 150]);
+  });
+  it('pins ROLL_DAMAGE', () => { expect(ROLL_DAMAGE).toBe(80); });
   it('subtracts damage normally', () => { expect(applyDamage(1000, 50, 0)).toEqual({ health: 950, clampAbsorbed: false }); });
   it('clamps to 1 HP before the minimum wreck time', () => {
     expect(applyDamage(10, 50, 179.99)).toEqual({ health: 1, clampAbsorbed: true });

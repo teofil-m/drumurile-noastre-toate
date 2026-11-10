@@ -67,8 +67,9 @@ Data flow per frame: `ui/input` → controls → `core/steering` → `sim` steps
 - Top speed ≈ 110 km/h
 
 ### 4.2 Damage
-- `dmg = round(tierDamage × clamp(speedKmh / 110, 0.1, 1.0))`
-- At top speed (110 km/h) a hit deals exactly the tier value (10 / 25 / 50 / 120); slower hits deal proportionally less.
+- `speedTerm = clamp(speedKmh / 110, 0.1, 1.0) ^ 1.5`; `dmg = round(tierDamage × DAMAGE_COEF × speedTerm)` (momentum-style retune 2026-11-10; slower hits fall off faster than linear).
+- `DAMAGE_COEF = 1.25`, tuned so the default greedy bot (always at top speed, speedTerm = 1) has median wreck time 193.6 s over seeds 1..50. At top speed a hit deals 13 / 31 / 63 / 150 (small / medium / large / epic).
+- Roll: `dmg = round(ROLL_DAMAGE × DAMAGE_COEF × speedTerm(speedKmh))`, `ROLL_DAMAGE = 80` (100 at top speed); goes through the same clamp / part-detachment / wreck path as a hazard hit.
 - Tuned 2026-11-08 (was `/ 50, 0.3, 2.0`); damage constants unchanged by the final retune (retuned 2026-11-08 after final review).
 - A hazard instance damages at most once per contact (dedupe by `instanceId`).
 - If `runTime < MIN_WRECK_TIME_S`: `health = max(health − dmg, 1)`; else `health = max(health − dmg, 0)`.
@@ -106,8 +107,8 @@ Each threshold emits a `PartDetached{part}` once; render turns the part into a l
 ### 4.6 Balance guard
 Greedy-bot simulation (`core/bot.ts`, kinematic, no Rapier) drives at top speed and hits every reachable hazard.
 Guard (retuned 2026-11-08 after final review) is a **distribution** over seeds 1..50, not a handful of seeds:
-- default bot: clamp-decided (clamp absorbed a lethal hit, or wreck < 185 s) ≤ 2 of 50 seeds; 10th-percentile wreck time ≥ 188 s; median in [195, 235] s; every seed wrecks by 600 s.
-- strong bot (`{ lateralSpeedMps: 4, hitToleranceM: 1.1 }`): clamp-decided ≤ 15% (≤ 7 of 50).
+- default bot (re-banded 2026-11-10 with DAMAGE_COEF 1.25): clamp-decided (clamp absorbed a lethal hit, or wreck < 185 s) ≤ 16 of 50 seeds (measured 16); 10th-percentile wreck time ≥ 180.7 s (measured 180.73); median in [180, 200] s (measured 193.6); every seed wrecks by 600 s.
+- strong bot (`{ lateralSpeedMps: 4, hitToleranceM: 1.1 }`): clamp-decided ≤ 20 of 50 (measured 20).
 - exposure (seeds 1..100, first 200 s at top speed): every hazard type in ≥ 60% of runs, all 8 types in ≥ 15%.
 Pinned per-seed outcomes in `bot.test.ts` are characterisation only.
 

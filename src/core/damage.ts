@@ -1,5 +1,5 @@
 import { MODE_CONFIG } from '../shared/modes';
-import { MAX_HP, PART_FRACTIONS, SPEED_FACTOR, TIER_DAMAGE } from './config';
+import { DAMAGE_COEF, MAX_HP, PART_FRACTIONS, SPEED_FACTOR, TIER_DAMAGE } from './config';
 import type { Tier } from './hazards';
 
 export type Part = 'bumper' | 'hood' | 'doorLeft' | 'doorRight' | 'exhaust' | 'transmission';
@@ -9,13 +9,13 @@ export interface DamageResult {
   clampAbsorbed: boolean;
 }
 
-export function speedFactor(speedKmh: number): number {
+export function speedTerm(speedKmh: number): number {
   const s = Number.isNaN(speedKmh) ? 0 : speedKmh;
-  return Math.min(SPEED_FACTOR.max, Math.max(SPEED_FACTOR.min, s / SPEED_FACTOR.divisorKmh));
+  return Math.min(SPEED_FACTOR.max, Math.max(SPEED_FACTOR.min, s / SPEED_FACTOR.divisorKmh)) ** 1.5;
 }
 
 export function hitDamage(tier: Tier, speedKmh: number): number {
-  return Math.round(TIER_DAMAGE[tier] * speedFactor(speedKmh));
+  return Math.round(TIER_DAMAGE[tier] * DAMAGE_COEF * speedTerm(speedKmh));
 }
 
 export function applyDamage(health: number, dmg: number, runTimeS: number, minWreckTimeS: number = MODE_CONFIG.classic.minWreckTimeS): DamageResult {

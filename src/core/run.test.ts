@@ -1,9 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import { applyEvent, createRun, scoreTimeMs } from './run';
 import { TOP_SPEED_KMH } from './config';
+import { hitDamage } from './damage';
 import type { HazardId } from './hazards';
 import type { RunEvent, RunState } from './types';
 
+const D = { small: hitDamage('small', TOP_SPEED_KMH), medium: hitDamage('medium', TOP_SPEED_KMH), large: hitDamage('large', TOP_SPEED_KMH), epic: hitDamage('epic', TOP_SPEED_KMH) };
 const drive = (): RunState => applyEvent(createRun(), { type: 'start' }).state;
 const tick = (s: RunState, dtS: number, steerInput = 0) => applyEvent(s, { type: 'tick', dtS, steerInput });
 const hit = (s: RunState, hazardId: HazardId, instanceId: string, speedKmh = TOP_SPEED_KMH) =>
@@ -31,7 +33,7 @@ const deepFreeze = <T>(o: T): T => {
 const drive2 = (mode: 'classic' | 'short'): RunState => applyEvent(createRun(mode), { type: 'start' }).state;
 const wreck = (): RunState => {
   let s = advance(drive(), 180);
-  for (let i = 0; i < 9; i++) s = hit(s, 'craterul-national', `x${i}`).state; // 9 x 120 > 1000
+  for (let i = 0; i < 9; i++) s = hit(s, 'craterul-national', `x${i}`).state; // 9 x 150 > 1000
   return s;
 };
 
@@ -92,9 +94,9 @@ describe('run state machine', () => {
   describe('hazard hits', () => {
     it('applies damage and records stats', () => {
       const r = hit(drive(), 'gropality', 'a');
-      expect(r.state.health).toBe(975);
-      expect(r.state.damageTaken).toBe(25);
-      expect(r.outputs).toEqual([{ type: 'hazardHit', hazardId: 'gropality', damage: 25 }]);
+      expect(r.state.health).toBe(1000 - D.medium);
+      expect(r.state.damageTaken).toBe(D.medium);
+      expect(r.outputs).toEqual([{ type: 'hazardHit', hazardId: 'gropality', damage: D.medium }]);
       expect(r.state.lastHazard).toBe('gropality');
       expect(r.state.stats.potholes).toBe(1);
       expect(r.state.stats.hits).toBe(1);
@@ -132,8 +134,8 @@ describe('run state machine', () => {
     });
     it('NaN speed uses the minimum speed factor and keeps health finite', () => {
       const r = hit(drive(), 'gropality', 'a', NaN);
-      expect(r.outputs).toEqual([{ type: 'hazardHit', hazardId: 'gropality', damage: 3 }]);
-      expect(r.state.health).toBe(997);
+      expect(r.outputs).toEqual([{ type: 'hazardHit', hazardId: 'gropality', damage: 1 }]);
+      expect(r.state.health).toBe(999);
       expect(Number.isFinite(r.state.health)).toBe(true);
     });
     it('does not mutate the previous state or its Set', () => {
@@ -169,7 +171,7 @@ describe('run state machine', () => {
       const r = hit(s, 'gropita', 'final');
       expect(r.state.phase).toBe('wrecked');
       expect(r.state.health).toBe(0);
-      expect(r.outputs[0]).toEqual({ type: 'hazardHit', hazardId: 'gropita', damage: 10 });
+      expect(r.outputs[0]).toEqual({ type: 'hazardHit', hazardId: 'gropita', damage: D.small });
       expect(r.outputs).toContainEqual({ type: 'wrecked', timeMs: 180000 });
       expect(r.outputs[r.outputs.length - 1]).toEqual({ type: 'wrecked', timeMs: 180000 });
     });
@@ -185,32 +187,30 @@ describe('run state machine', () => {
     it('emits partDetached once when crossing a threshold and accumulates', () => {
       let s = drive();
       let outs: RunOutputs = [];
-      for (let i = 0; i < 8; i++) {
+      for (let i = 0; i < 7; i++) {
         const r = hit(s, 'gropality', `g${i}`);
         s = r.state;
         outs = outs.concat(r.outputs);
       }
-      expect(s.damageTaken).toBe(200);
+      expect(s.damageTaken).toBe(7 * D.medium); // 217, crosses bumper (200)
       expect(outs.filter((o) => o.type === 'partDetached')).toEqual([{ type: 'partDetached', part: 'bumper' }]);
       expect(s.detached).toEqual(['bumper']);
-      const r = hit(s, 'craterul-national', 'big'); // 320 taken, then more
+      const r = hit(s, 'craterul-national', 'big'); // 367 taken, still below hood (400)
       expect(r.state.detached).toEqual(['bumper']);
-      const r2 = hit(r.state, 'craterul-national', 'big2'); // 440 taken crosses hood
+      const r2 = hit(r.state, 'craterul-national', 'big2'); // 517 taken crosses hood (400), below doorLeft (550)
       expect(r2.state.detached).toEqual(['bumper', 'hood']);
       expect(r2.outputs).toEqual([
-        { type: 'hazardHit', hazardId: 'craterul-national', damage: 120 },
+        { type: 'hazardHit', hazardId: 'craterul-national', damage: D.epic },
         { type: 'partDetached', part: 'hood' },
       ]);
     });
     it('emits hazardHit, the final part, then wrecked', () => {
       let s = advance(drive(), 180);
-      for (let i = 0; i < 6; i++) s = hit(s, 'craterul-national', `x${i}`).state; // 720 taken
-      for (let i = 0; i < 3; i++) s = hit(s, 'groapa-de-gunoi', `g${i}`).state; // 870 taken
-      s = hit(s, 'gropita', 'p').state; // 880 taken
-      const r = hit(s, 'craterul-national', 'last'); // 120 damage: 1000
+      for (let i = 0; i < 6; i++) s = hit(s, 'craterul-national', `x${i}`).state; // 900 taken, exhaust gone
+      const r = hit(s, 'craterul-national', 'last'); // 150 damage: 1050 -> wreck
       expect(r.state.phase).toBe('wrecked');
       expect(r.outputs).toEqual([
-        { type: 'hazardHit', hazardId: 'craterul-national', damage: 120 },
+        { type: 'hazardHit', hazardId: 'craterul-national', damage: D.epic },
         { type: 'partDetached', part: 'transmission' },
         { type: 'wrecked', timeMs: 180000 },
       ]);
@@ -218,10 +218,12 @@ describe('run state machine', () => {
     });
     it('emits multiple parts from one hit in threshold order', () => {
       let s = advance(drive(), 180);
-      for (let i = 0; i < 7; i++) s = hit(s, 'craterul-national', `x${i}`).state; // 840 taken
-      const r = hit(s, 'craterul-national', 'y'); // 960: exhaust (850), transmission (950)
+      for (let i = 0; i < 4; i++) s = hit(s, 'craterul-national', `x${i}`).state; // 600 taken
+      for (let i = 0; i < 3; i++) s = hit(s, 'groapa-de-gunoi', `g${i}`).state; // 789 taken
+      s = hit(s, 'gropita', 'p').state; // 802 taken
+      const r = hit(s, 'craterul-national', 'y'); // 952: exhaust (850), transmission (950)
       expect(r.outputs).toEqual([
-        { type: 'hazardHit', hazardId: 'craterul-national', damage: 120 },
+        { type: 'hazardHit', hazardId: 'craterul-national', damage: D.epic },
         { type: 'partDetached', part: 'exhaust' },
         { type: 'partDetached', part: 'transmission' },
       ]);
@@ -302,7 +304,7 @@ describe('run state machine', () => {
     it('allows reusing an instanceId after restart', () => {
       const s = hit(drive(), 'gropality', 'a').state;
       const r = applyEvent(s, { type: 'restart' }).state;
-      expect(hit(r, 'gropality', 'a').state.health).toBe(975);
+      expect(hit(r, 'gropality', 'a').state.health).toBe(1000 - D.medium);
     });
   });
 
@@ -379,9 +381,9 @@ describe('run modes', () => {
     const w = hit(advance(s, 60), 'gropita', 'late');
     expect(w.state.phase).toBe('wrecked');
   });
-  it('short: first 120 damage detaches the bumper at 60 damage', () => {
+  it('short: first epic hit detaches bumper and hood (60 and 120 damage)', () => {
     const r = hit(drive2('short'), 'craterul-national', 'c1');
-    expect(r.state.damageTaken).toBe(120);
+    expect(r.state.damageTaken).toBe(D.epic);
     expect(r.state.detached).toEqual(['bumper', 'hood']);
   });
   it('classic: clamp still applies until 180 s', () => {

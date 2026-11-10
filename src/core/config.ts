@@ -3,6 +3,8 @@ import type { Part } from './damage';
 
 export const MAX_HP = 1000;
 export const TIER_DAMAGE: Record<Tier, number> = { small: 10, medium: 25, large: 50, epic: 120 };
+export const DAMAGE_COEF = 1.25;
+export const ROLL_DAMAGE = 80;
 export const SPEED_FACTOR = { divisorKmh: 110, min: 0.1, max: 1.0 };
 export const TOP_SPEED_KMH = 110;
 export const MAX_TICK_S = 0.25;
