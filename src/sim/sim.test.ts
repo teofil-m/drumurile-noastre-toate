@@ -199,3 +199,38 @@ describe('sim (headless Rapier)', () => {
     sim.dispose();
   });
 });
+
+describe('rolls', () => {
+  it('top-speed gura-iadului hit rolls the car within a few seconds', async () => {
+    const sim = await createSim(1, {
+      chunkSource: source((c) => {
+        if (c.index === 6) c.hazards.push({ instanceId: 'g1', hazardId: 'gura-iadului', s: 320, lateral: 0.2 });
+      }),
+    });
+    let hitAt = -1;
+    let rollAt = -1;
+    let rollSpeed = 0;
+    let step = 0;
+    drive(sim, 4000, GAS, (events) => {
+      step++;
+      if (hitAt < 0 && events.some((e) => e.type === 'hazardHit')) hitAt = step;
+      const roll = events.find((e) => e.type === 'roll');
+      if (roll && roll.type === 'roll') {
+        rollAt = step;
+        rollSpeed = roll.speedKmh;
+      }
+      return rollAt >= 0 || (hitAt >= 0 && step - hitAt > 60 * 6);
+    });
+    expect(hitAt).toBeGreaterThan(0);
+    expect(rollAt).toBeGreaterThan(hitAt);
+    expect(rollAt - hitAt).toBeLessThan(60 * 5);
+    expect(rollSpeed).toBeGreaterThan(50);
+    sim.dispose();
+  });
+  it('does not emit rolls while driving normally on a blank road', async () => {
+    const sim = await createSim(1, { chunkSource: source(() => {}) });
+    const { events } = drive(sim, 600);
+    expect(events.filter((e) => e.type === 'roll')).toEqual([]);
+    sim.dispose();
+  });
+});

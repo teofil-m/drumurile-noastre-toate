@@ -49,6 +49,9 @@ const VOID_Y_M = -3;
 const FLIP_UP_Y = 0.3;
 const FLIP_RESET_AFTER_S = 1.5;
 const RESET_HEIGHT_M = 1;
+const ROLL_ARM_UP_Y = 0.5; // upY above this re-arms roll detection
+const ROLL_TRIGGER_UP_Y = -0.5; // upY below this while armed counts one roll
+const ROLL_BOOST_MIN_KMH = 80;
 
 interface LoadedChunk { chunk: Chunk; colliders: RAPIER.Collider[] }
 interface TrafficCar { instanceId: string; s: number; lane: 1 | -1; speedMs: number; body: RAPIER.RigidBody }
@@ -74,6 +77,7 @@ export async function createSim(seed: number, opts: SimOptions = {}): Promise<Si
   let s = START_S_M;
   let lateral = startLateral;
   let flippedForS = 0;
+  let rollArmed = true;
 
   const addFixed = (cx: number, cy: number, cz: number, hx: number, hy: number, hz: number, heading: number): RAPIER.Collider => {
     const body = world.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation(cx, cy, cz).setRotation(quatOf(yaw(heading))));
@@ -214,6 +218,11 @@ export async function createSim(seed: number, opts: SimOptions = {}): Promise<Si
       // recovery: fell into the void, or stuck upside down / on its side
       const rot = vehicle.chassis.rotation();
       const upY = qRotate([rot.x, rot.y, rot.z, rot.w], [0, 1, 0])[1];
+      const events: RunEvent[] = [];
+      if (rollArmed && upY < ROLL_TRIGGER_UP_Y) {
+        rollArmed = false;
+        events.push({ type: 'roll', speedKmh });
+      } else if (!rollArmed && upY > ROLL_ARM_UP_Y) rollArmed = true;
       flippedForS = upY < FLIP_UP_Y ? flippedForS + dtS : 0;
       if (t.y < VOID_Y_M || flippedForS > FLIP_RESET_AFTER_S) {
         const w = path.toWorld(s, 0);
@@ -225,12 +234,13 @@ export async function createSim(seed: number, opts: SimOptions = {}): Promise<Si
         flippedForS = 0;
       }
 
-      const events: RunEvent[] = [];
       const hazards = [...loaded.values()].flatMap((l) => l.chunk.hazards);
       for (const h of hazardContacts(prevS, s, lateral, hazards)) {
         if (impulsed.has(h.instanceId)) continue;
         impulsed.add(h.instanceId);
-        vehicle.kick(getHazard(h.hazardId).tier, h.lateral >= lateral ? 1 : -1, h.hazardId === 'gura-iadului');
+        const tier = getHazard(h.hazardId).tier;
+        const rollBoost = (tier === 'large' || tier === 'epic') && speedKmh >= ROLL_BOOST_MIN_KMH;
+        vehicle.kick(tier, h.lateral >= lateral ? 1 : -1, h.hazardId === 'gura-iadului', rollBoost);
         events.push({ type: 'hazardHit', hazardId: h.hazardId, instanceId: h.instanceId, speedKmh });
       }
       if (trafficCollision(s, lateral, traffic, LANE_OFFSET_M)) events.push({ type: 'trafficCollision' });

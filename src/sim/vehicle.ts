@@ -39,6 +39,8 @@ export const TUNING = {
   hitSideDvFraction: 0.35, // sideways kick as a fraction of the vertical dv, towards the opposite side to the hit
   hitPointLateralM: 0.75, // impulse is applied this far to the hit side of the car centre
   hitPointForwardM: -1.3, // ... and at the front axle
+  // large/epic hits at speed: much stronger sideways kick (a fraction of the vertical dv) so the car can actually roll
+  rollBoost: { sideDvFraction: 1.2, gapingSideDv: 4 },
   gaping: { downDv: 2.5, upDv: 7.5, upDelayS: 0.18 }, // gura-iadului: dive first, then launch
 } as const;
 
@@ -74,7 +76,7 @@ export interface Vehicle {
   /** Apply drive/brake/steer for this step; call before world.step. */
   drive(controls: Controls, steer: number, dtS: number): void;
   /** Kick the chassis for a hazard hit on the given side (+1 right, -1 left). */
-  kick(tier: Tier, side: 1 | -1, delayedUp?: boolean): void;
+  kick(tier: Tier, side: 1 | -1, delayedUp?: boolean, rollBoost?: boolean): void;
   /** Impulse due after a delay (gura-iadului's second half). Call each step. */
   tickPending(dtS: number): void;
   wheelPose(i: number): { position: V3; quaternion: Q4 };
@@ -111,7 +113,7 @@ export function createVehicle(R: Rapier, world: RAPIER.World, start: { x: number
     controller.setWheelSideFrictionStiffness(i, T.sideFrictionStiffness);
   });
 
-  let pendingUp: { dv: number; delayS: number; side: 1 | -1 } | null = null;
+  let pendingUp: { dv: number; delayS: number; side: 1 | -1; sideDv: number } | null = null;
 
   const impulseAt = (dv: number, side: 1 | -1, sideDv: number): void => {
     const q = body.rotation();
@@ -143,20 +145,20 @@ export function createVehicle(R: Rapier, world: RAPIER.World, start: { x: number
         controller.setWheelBrake(i, brake * T.brakeForcePerWheel + handbrake);
       }
     },
-    kick(tier, side, delayedUp = false) {
+    kick(tier, side, delayedUp = false, rollBoost = false) {
       if (delayedUp) {
         impulseAt(-T.gaping.downDv, side, 0);
-        pendingUp = { dv: T.gaping.upDv, delayS: T.gaping.upDelayS, side };
+        pendingUp = { dv: T.gaping.upDv, delayS: T.gaping.upDelayS, side, sideDv: rollBoost ? T.rollBoost.gapingSideDv : 0 };
         return;
       }
       const dv = T.impulseDvByTier[tier];
-      impulseAt(dv, side, dv * T.hitSideDvFraction);
+      impulseAt(dv, side, dv * (rollBoost ? T.rollBoost.sideDvFraction : T.hitSideDvFraction));
     },
     tickPending(dtS) {
       if (!pendingUp) return;
       pendingUp.delayS -= dtS;
       if (pendingUp.delayS <= 0) {
-        impulseAt(pendingUp.dv, pendingUp.side, 0);
+        impulseAt(pendingUp.dv, pendingUp.side, pendingUp.sideDv);
         pendingUp = null;
       }
     },
