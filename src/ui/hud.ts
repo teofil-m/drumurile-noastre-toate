@@ -15,7 +15,7 @@ export interface Hud {
   el: HTMLElement;
   update(data: HudData, lang: Lang): void;
   flash(): void;
-  popup(damage: number, tier: Tier): void;
+  popup(damage: number, tier: Tier, label?: string): void;
   show(visible: boolean): void;
 }
 
@@ -65,10 +65,10 @@ export function createHud(parent: HTMLElement): Hud {
       void flashEl.offsetWidth;
       flashEl.classList.add('on');
     },
-    popup(damage, tier) {
+    popup(damage, tier, label) {
       const pop = document.createElement('div');
       pop.className = tier === 'large' || tier === 'epic' ? 'dmg-pop big' : 'dmg-pop';
-      pop.textContent = `−${Math.round(damage)} HP`;
+      pop.textContent = `${label ? `${label} ` : ''}−${Math.round(damage)} HP`;
       pop.style.marginLeft = `${Math.round((Math.random() - 0.5) * 80)}px`;
       popups.appendChild(pop);
       setTimeout(() => pop.remove(), 1100);

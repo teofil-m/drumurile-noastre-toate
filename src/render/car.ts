@@ -42,6 +42,9 @@ export function createDacia(): Dacia {
   add(root, box(1.6, 0.5, 3.8), body, 0, 0.05, 0);
   add(root, box(1.4, 0.5, 1.5), body, 0, 0.55, 0.15); // cabin
   add(root, box(1.44, 0.3, 1.2), glass, 0, 0.58, 0.15); // tinted windows (wider, shorter => yellow pillars)
+  // Sloped windshield and rear window (narrower than the cabin so the yellow pillars stay visible); the glass band above doubles as side windows.
+  add(root, box(1.3, 0.58, 0.03), glass, 0, 0.58, -0.64).rotation.x = 0.54;
+  add(root, box(1.3, 0.46, 0.03), glass, 0, 0.62, 0.92).rotation.x = -0.58;
   add(root, box(1.5, 0.12, 0.95), body, 0, 0.36, 1.4); // trunk lid
   add(root, box(1.5, 0.06, 1.5), body, 0, 0.82, 0.15); // roof cap
 

@@ -1,6 +1,7 @@
 import pkg from '../package.json';
 import { createApiClient } from './adapters/apiClient';
 import { createLocalStore } from './adapters/localStore';
+import { ROAD } from './core/config';
 import { getHazard } from './core/hazards';
 import { loadLang, saveLang, t } from './core/i18n';
 import type { Lang } from './core/i18n';
@@ -183,6 +184,9 @@ function handleOutputs(outputs: RunOutput[]): void {
       const tier = getHazard(o.hazardId).tier;
       hud.popup(o.damage, tier);
       if (tier === 'large' || tier === 'epic') bigHit();
+    } else if (o.type === 'roll') {
+      hud.popup(o.damage, 'large', t(lang, 'hud.roll'));
+      bigHit();
     }
   }
 }
@@ -252,7 +256,7 @@ function stepWorld(w: World): void {
   const steer = effectiveSteer(w.steering, w.snapshot.speedKmh);
   const { snapshot, events } = w.sim.step(controls, steer, STEP_S);
   w.snapshot = snapshot;
-  handleOutputs(apply({ type: 'tick', dtS: STEP_S, steerInput: controls.steer }));
+  handleOutputs(apply({ type: 'tick', dtS: STEP_S, steerInput: controls.steer, offRoad: Math.abs(snapshot.lateral) > ROAD.halfWidthM + 1 }));
   for (const ev of events) {
     if (world !== w || w.session.run.phase !== 'driving') break;
     handleOutputs(apply(ev));
