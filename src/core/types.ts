@@ -16,6 +16,8 @@ export interface RunStats {
   hits: number;
   hazardTypesHit: readonly HazardId[];
   potholeStreakNoSteer: number;
+  rolls: number;
+  grassS: number;
 }
 
 export interface RunState {
@@ -38,11 +40,13 @@ export type RunEvent =
   | { type: 'resume' }
   | { type: 'restart' }
   | { type: 'trafficCollision' }
-  | { type: 'tick'; dtS: number; steerInput: number }
+  | { type: 'tick'; dtS: number; steerInput: number; offRoad?: boolean }
+  | { type: 'roll'; speedKmh: number }
   | { type: 'hazardHit'; hazardId: HazardId; instanceId: string; speedKmh: number };
 
 export type RunOutput =
   | { type: 'hazardHit'; hazardId: HazardId; damage: number }
+  | { type: 'roll'; damage: number }
   | { type: 'partDetached'; part: Part }
   | { type: 'wrecked'; timeMs: number }
   | { type: 'dnf' };

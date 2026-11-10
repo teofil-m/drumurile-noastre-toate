@@ -43,6 +43,7 @@ const RO_EXPECTED = {
   'result.menu': 'Meniu',
   'result.submitting': 'Se trimite…',
   'result.failed': 'Trimiterea a eșuat',
+  'hud.roll': 'Rostogolire!',
 };
 
 const EN_EXPECTED = {
@@ -85,6 +86,7 @@ const EN_EXPECTED = {
   'result.menu': 'Menu',
   'result.submitting': 'Submitting…',
   'result.failed': 'Submit failed',
+  'hud.roll': 'Roll!',
 };
 
 describe('DICT', () => {

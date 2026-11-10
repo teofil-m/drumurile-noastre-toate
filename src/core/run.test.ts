@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { applyEvent, createRun, scoreTimeMs } from './run';
 import { TOP_SPEED_KMH } from './config';
 import { hitDamage } from './damage';
+import { DAMAGE_COEF, ROLL_DAMAGE } from './config';
 import type { HazardId } from './hazards';
 import type { RunEvent, RunState } from './types';
 
@@ -46,7 +47,7 @@ describe('run state machine', () => {
     expect(s.timeS).toBe(0);
     expect(s.damageTaken).toBe(0);
     expect(s.detached).toEqual([]);
-    expect(s.stats).toEqual({ potholes: 0, hits: 0, hazardTypesHit: [], potholeStreakNoSteer: 0 });
+    expect(s.stats).toEqual({ potholes: 0, hits: 0, hazardTypesHit: [], potholeStreakNoSteer: 0, rolls: 0, grassS: 0 });
     expect(s.hitInstanceIds.size).toBe(0);
     expect(s.lastHazard).toBeNull();
     expect(s.clampAbsorbed).toBe(false);
@@ -391,5 +392,56 @@ describe('run modes', () => {
     for (let i = 0; i < 9; i++) s = hit(s, 'craterul-national', `x${i}`).state;
     expect(s.phase).toBe('driving');
     expect(s.health).toBe(1);
+  });
+});
+
+describe('rolls and grass', () => {
+  const roll = (s: RunState, speedKmh = TOP_SPEED_KMH) => applyEvent(s, { type: 'roll', speedKmh });
+  it('applies roll damage, counts the roll and emits a roll output', () => {
+    const r = roll(drive());
+    expect(r.outputs).toEqual([{ type: 'roll', damage: Math.round(ROLL_DAMAGE * DAMAGE_COEF) }]);
+    expect(r.state.health).toBe(1000 - 100);
+    expect(r.state.damageTaken).toBe(100);
+    expect(r.state.stats.rolls).toBe(1);
+    expect(r.state.stats.hits).toBe(0);
+  });
+  it('scales roll damage with speed', () => {
+    expect(roll(drive(), 55).outputs).toEqual([{ type: 'roll', damage: Math.round(80 * DAMAGE_COEF * 0.5 ** 1.5) }]);
+  });
+  it('is ignored outside driving', () => {
+    const m = createRun();
+    expect(roll(m).state).toBe(m);
+    expect(roll(m).outputs).toEqual([]);
+  });
+  it('detaches parts like a hazard hit', () => {
+    const r = roll(drive());
+    expect(r.state.detached).toEqual([]);
+    const r2 = roll(r.state);
+    expect(r2.outputs).toEqual([{ type: 'roll', damage: 100 }, { type: 'partDetached', part: 'bumper' }]);
+  });
+  it('clamps a lethal roll before the minimum wreck time', () => {
+    let s = drive();
+    for (let i = 0; i < 12; i++) s = roll(s).state;
+    expect(s.health).toBe(1);
+    expect(s.phase).toBe('driving');
+    expect(s.clampAbsorbed).toBe(true);
+  });
+  it('wrecks on a roll with wrecked output', () => {
+    let s = advance(drive(), 180);
+    for (let i = 0; i < 9; i++) s = roll(s).state;
+    const r = roll(s);
+    expect(r.state.phase).toBe('wrecked');
+    expect(r.outputs[r.outputs.length - 1]).toEqual({ type: 'wrecked', timeMs: 180000 });
+  });
+  it('accumulates grassS only while driving and offRoad, using the clamped dt', () => {
+    const t = (s: RunState, dtS: number, offRoad?: boolean) => applyEvent(s, { type: 'tick', dtS, steerInput: 0, offRoad }).state;
+    let s = drive();
+    s = t(s, 0.1, true);
+    s = t(s, 0.1, false);
+    s = t(s, 0.1);
+    expect(s.stats.grassS).toBeCloseTo(0.1, 10);
+    expect(t(s, 5, true).stats.grassS).toBeCloseTo(0.35, 10);
+    const p = applyEvent(s, { type: 'pause' }).state;
+    expect(applyEvent(p, { type: 'tick', dtS: 0.1, steerInput: 0, offRoad: true }).state).toBe(p);
   });
 });

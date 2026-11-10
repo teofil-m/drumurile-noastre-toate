@@ -15,7 +15,7 @@ const none = new Set<AchievementId>();
 const unlocks = (s: RunState): AchievementId[] => evaluateAchievements(s, none);
 
 describe('ACHIEVEMENTS catalog', () => {
-  it('has 11 entries with exact ids, names and copy', () => {
+  it('has 13 entries with exact ids, names and copy', () => {
     expect(ACHIEVEMENTS.map((a) => [a.id, a.nameRo, a.subtitle.ro, a.subtitle.en])).toEqual([
       ['prima-gropita', 'Prima Gropiță', 'Prima groapă nu se uită', 'Your first pothole'],
       ['bordurist', 'Bordurist', 'Ai urcat pe bordură', 'You climbed a curb'],
@@ -28,6 +28,8 @@ describe('ACHIEVEMENTS catalog', () => {
       ['colectionarul', 'Colecționarul', 'Toate tipurile de pericole într-o tură', 'Every hazard type in one run'],
       ['sapator-de-elita', 'Săpător de elită', '50 de gropi într-o tură', '50 potholes in one run'],
       ['ghinion', 'Ghinion', 'Te-ai lovit de o mașină', 'You crashed into traffic'],
+      ['they-see-me-rollin', "They See Me Rollin'", '5 rostogoliri într-o tură', '5 rolls in one run'],
+      ['ierbivor', 'Ierbivor', 'Iarba verde de acasă', '30 s on the grass'],
     ]);
   });
   it('uses the persistence key', () => {
@@ -84,6 +86,14 @@ describe('evaluateAchievements rules', () => {
   it('ghinion on dnf', () => {
     expect(unlocks(withStats({}, { phase: 'dnf' }))).toEqual(['ghinion']);
     expect(unlocks(withStats({}, { phase: 'driving' }))).toEqual([]);
+  });
+  it('they-see-me-rollin at 5 rolls, not 4', () => {
+    expect(unlocks(withStats({ rolls: 5 }))).toEqual(['they-see-me-rollin']);
+    expect(unlocks(withStats({ rolls: 4 }))).toEqual([]);
+  });
+  it('ierbivor at 30 s on the grass, not less', () => {
+    expect(unlocks(withStats({ grassS: 30 }))).toEqual(['ierbivor']);
+    expect(unlocks(withStats({ grassS: 29.99 }))).toEqual([]);
   });
   it('does not return already unlocked ids', () => {
     const s = withStats({ potholes: 50 });

@@ -47,6 +47,7 @@ const RO = {
   'result.menu': 'Meniu',
   'result.submitting': 'Se trimite…',
   'result.failed': 'Trimiterea a eșuat',
+  'hud.roll': 'Rostogolire!',
 } as const;
 
 export type MessageKey = keyof typeof RO;
@@ -91,6 +92,7 @@ const EN: Record<MessageKey, string> = {
   'result.menu': 'Menu',
   'result.submitting': 'Submitting…',
   'result.failed': 'Submit failed',
+  'hud.roll': 'Roll!',
 };
 
 export const DICT: Record<Lang, Record<MessageKey, string>> = { ro: RO, en: EN };

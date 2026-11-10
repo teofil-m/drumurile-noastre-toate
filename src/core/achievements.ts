@@ -15,7 +15,9 @@ export type AchievementId =
   | 'fulgerul-de-berceni'
   | 'colectionarul'
   | 'sapator-de-elita'
-  | 'ghinion';
+  | 'ghinion'
+  | 'they-see-me-rollin'
+  | 'ierbivor';
 
 export interface Achievement {
   id: AchievementId;
@@ -26,6 +28,8 @@ export interface Achievement {
 export const ACHIEVEMENTS_KEY = 'dn.achievements';
 export const FULGERUL_MAX_TIME_S = 240;
 export const SAPATOR_POTHOLES = 50;
+export const ROLLIN_ROLLS = 5;
+export const IERBIVOR_GRASS_S = 30;
 
 export const ACHIEVEMENTS: readonly Achievement[] = [
   { id: 'prima-gropita', nameRo: 'Prima Gropiță', subtitle: { ro: 'Prima groapă nu se uită', en: 'Your first pothole' } },
@@ -39,6 +43,8 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
   { id: 'colectionarul', nameRo: 'Colecționarul', subtitle: { ro: 'Toate tipurile de pericole într-o tură', en: 'Every hazard type in one run' } },
   { id: 'sapator-de-elita', nameRo: 'Săpător de elită', subtitle: { ro: '50 de gropi într-o tură', en: '50 potholes in one run' } },
   { id: 'ghinion', nameRo: 'Ghinion', subtitle: { ro: 'Te-ai lovit de o mașină', en: 'You crashed into traffic' } },
+  { id: 'they-see-me-rollin', nameRo: "They See Me Rollin'", subtitle: { ro: '5 rostogoliri într-o tură', en: '5 rolls in one run' } },
+  { id: 'ierbivor', nameRo: 'Ierbivor', subtitle: { ro: 'Iarba verde de acasă', en: '30 s on the grass' } },
 ];
 
 const hitKind = (s: RunState, kind: 'curb' | 'manhole'): boolean =>
@@ -57,6 +63,8 @@ const RULES: Record<AchievementId, (s: RunState) => boolean> = {
   colectionarul: (s) => HAZARD_IDS.every((id) => hit(s, id)),
   'sapator-de-elita': (s) => s.stats.potholes >= SAPATOR_POTHOLES,
   ghinion: (s) => s.phase === 'dnf',
+  'they-see-me-rollin': (s) => s.stats.rolls >= ROLLIN_ROLLS,
+  ierbivor: (s) => s.stats.grassS >= IERBIVOR_GRASS_S,
 };
 
 export function evaluateAchievements(state: RunState, unlocked: ReadonlySet<AchievementId>): AchievementId[] {
