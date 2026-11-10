@@ -129,6 +129,8 @@ Timer = accumulated fixed sim steps (paused/background time excluded). `potholes
 9. Colecționarul – every hazard type in one run
 10. Săpător de elită – 50 potholes in one run
 11. Ghinion – DNF by traffic
+12. They See Me Rollin' – 5 rolls in one run (added 2026-11-10, playtest backlog)
+13. Ierbivor – Iarba verde de acasă: ≥ 30 s total on the grass in one run (added 2026-11-10)
 
 Persisted via `Storage` port (localStorage key `dn.achievements`); newly unlocked ones emit toasts.
 
